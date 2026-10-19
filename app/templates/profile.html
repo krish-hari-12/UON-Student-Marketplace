@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}My profile - {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">My profile</h1>
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card p-4 h-100">
+      <h2 class="h5">Account details</h2>
+      <form method="post" action="{{ url_for('auth.profile') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="mb-3">
+          <label class="form-label">First name *</label>
+          <input name="first_name" class="form-control" required minlength="2" maxlength="50" value="{{ user.first_name }}">
+          <div class="text-danger small">{{ errors.first_name }}</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Last name *</label>
+          <input name="last_name" class="form-control" required minlength="2" maxlength="50" value="{{ user.last_name }}">
+          <div class="text-danger small">{{ errors.last_name }}</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Phone</label>
+          <input name="phone" class="form-control" value="{{ user.phone or '' }}">
+          <div class="text-danger small">{{ errors.phone }}</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Email (cannot be changed)</label>
+          <input class="form-control" value="{{ user.email }}" disabled>
+        </div>
+        <div class="mb-1">
+          <span class="badge {{ 'bg-success-subtle text-success-emphasis' if user.status == 'active' else 'bg-danger-subtle text-danger-emphasis' }}">{{ user.status }}</span>
+          <span class="badge bg-secondary">{{ user.role }}</span>
+        </div>
+        <button class="btn btn-success mt-3" type="submit">Save changes</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card p-4">
+      <h2 class="h5">Change password</h2>
+      <form method="post" action="{{ url_for('auth.change_password') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="mb-3">
+          <label class="form-label">Current password</label>
+          <input type="password" name="current_password" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">New password (min 8 characters)</label>
+          <input type="password" name="new_password" class="form-control" required minlength="8">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Confirm new password</label>
+          <input type="password" name="confirm_password" class="form-control" required>
+        </div>
+        <button class="btn btn-outline-primary" type="submit">Update password</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

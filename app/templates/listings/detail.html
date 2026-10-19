@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ listing.title }} - {{ app_name }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('main.browse') }}">Listings</a></li>
+    <li class="breadcrumb-item"><a href="{{ url_for('main.browse', category=listing.category_id) }}">{{ listing.category_name }}</a></li>
+    <li class="breadcrumb-item active">{{ listing.title|truncate(40) }}</li>
+  </ol>
+</nav>
+
+<div class="row g-4">
+  <!-- Image gallery (FR-05) -->
+  <div class="col-lg-7">
+    <div id="gallery" class="carousel slide rounded-3 overflow-hidden border" data-bs-ride="false">
+      <div class="carousel-inner">
+        {% for img in images %}
+        <div class="carousel-item {% if loop.first %}active{% endif %}">
+          <img class="d-block w-100 detail-img" src="{{ url_for('main.uploaded_file', filename=img.file_path) }}" alt="Photo {{ loop.index }} of {{ listing.title }}">
+        </div>
+        {% else %}
+        <div class="carousel-item active">
+          <div class="img-placeholder detail-img d-flex align-items-center justify-content-center">📦</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% if images|length > 1 %}
+      <button class="carousel-control-prev" type="button" data-bs-target="#gallery" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon"></span><span class="visually-hidden">Previous</span>
+      </button>
+      <button class="carousel-control-next" type="button" data-bs-target="#gallery" data-bs-slide="next">
+        <span class="carousel-control-next-icon"></span><span class="visually-hidden">Next</span>
+      </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Summary + actions -->
+  <div class="col-lg-5">
+    <div class="card p-4 h-100">
+      {% if listing.status != 'active' %}
+        <span class="badge bg-secondary align-self-start mb-2">This listing is {{ listing.status }}</span>
+      {% endif %}
+      <h1 class="h4">{{ listing.title }}</h1>
+      <div class="text-success fs-3 fw-bold mb-3">${{ '%.2f'|format(listing.price) }}</div>
+      <ul class="list-group list-group-flush mb-3">
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Category</span><span>{{ listing.category_name }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Condition</span><span>{{ listing.condition }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Location</span><span>{{ listing.location or 'Not specified' }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Posted</span><span>{{ listing.created_at[:10] }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Seller</span><span>{{ listing.seller_first_name }} (member since {{ listing.seller_since[:10] }})</span></li>
+      </ul>
+
+      <div class="d-grid gap-2">
+        {% if can_contact %}
+        <form method="post" action="{{ url_for('messages.start_conversation', listing_id=listing.listing_id) }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn btn-success btn-lg w-100" type="submit">💬 Contact seller</button>
+        </form>
+        {% elif not session.get('user_id') %}
+          <a class="btn btn-outline-success btn-lg" href="{{ url_for('auth.login', next=request.path) }}">Log in to contact the seller</a>
+        {% endif %}
+
+        {% if session.get('user_id') %}
+        <form method="post" action="{{ url_for('favourites.toggle', listing_id=listing.listing_id) }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button class="btn btn-outline-primary w-100" type="submit">
+            {% if already_saved %}★ Remove from favourites{% else %}☆ Save to favourites{% endif %}
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Description -->
+<div class="card mt-4 p-4">
+  <h2 class="h5">Description</h2>
+  <p class="mb-0" style="white-space: pre-line;">{{ listing.description }}</p>
+</div>
+
+<!-- Report (FR-11, BR-06) -->
+<div class="card mt-3 p-3 d-flex flex-row align-items-center justify-content-between">
+  <span class="text-muted small">Seen something inappropriate or suspicious about this listing?</span>
+  {% if session.get('user_id') and current_user['user_id'] != listing.user_id %}
+    <a class="btn btn-outline-danger btn-sm" href="{{ url_for('reports.report_listing', listing_id=listing.listing_id) }}">⚑ Report this listing</a>
+  {% endif %}
+</div>
+
+<!-- Owner tools (BR-02) -->
+{% if session.get('user_id') and current_user['user_id'] == listing.user_id %}
+<div class="card mt-3 p-3">
+  <h2 class="h6">Owner tools</h2>
+  <div class="d-flex gap-2 flex-wrap">
+    <a class="btn btn-outline-primary btn-sm" href="{{ url_for('listings.edit', listing_id=listing.listing_id) }}">Edit</a>
+    <form method="post" action="{{ url_for('listings.set_status', listing_id=listing.listing_id) }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <input type="hidden" name="status" value="{{ 'active' if listing.status == 'archived' else 'archived' }}">
+      <button class="btn btn-outline-secondary btn-sm" type="submit">{{ 'Re-activate' if listing.status == 'archived' else 'Archive' }}</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

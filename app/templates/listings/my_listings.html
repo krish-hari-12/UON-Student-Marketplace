@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}My listings - {{ app_name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">My listings</h1>
+  <a class="btn btn-success" href="{{ url_for('listings.create') }}">+ Post an Ad</a>
+</div>
+
+<div class="table-responsive card p-2">
+<table class="table table-hover align-middle mb-0">
+  <thead>
+    <tr><th>Item</th><th>Category</th><th class="text-end">Price</th><th>Status</th><th class="text-end">Actions</th></tr>
+  </thead>
+  <tbody>
+  {% for l in listings %}
+    <tr>
+      <td>
+        <div class="d-flex align-items-center gap-2">
+          {% if l.image_path %}
+            <img src="{{ url_for('main.uploaded_file', filename=l.image_path) }}" class="thumb rounded" alt="">
+          {% else %}
+            <div class="thumb rounded border d-flex align-items-center justify-content-center">📦</div>
+          {% endif %}
+          <a href="{{ url_for('listings.detail', listing_id=l.listing_id) }}">{{ l.title }}</a>
+        </div>
+      </td>
+      <td>{{ l.category_name }}</td>
+      <td class="text-end">${{ '%.2f'|format(l.price) }}</td>
+      <td>
+        {% if l.status == 'active' %}<span class="badge bg-success-subtle text-success-emphasis">active</span>
+        {% elif l.status == 'archived' %}<span class="badge bg-secondary-subtle text-secondary-emphasis">archived</span>
+        {% elif l.status == 'sold' %}<span class="badge bg-info-subtle text-info-emphasis">sold</span>
+        {% else %}<span class="badge bg-danger-subtle text-danger-emphasis">removed by admin</span>{% endif %}
+      </td>
+      <td class="text-end">
+        <div class="btn-group btn-group-sm">
+          <a class="btn btn-outline-primary" href="{{ url_for('listings.edit', listing_id=l.listing_id) }}">Edit</a>
+          <form method="post" action="{{ url_for('listings.set_status', listing_id=l.listing_id) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="{{ 'active' if l.status == 'archived' else 'archived' }}">
+            <button class="btn btn-outline-secondary" type="submit">{{ 'Re-activate' if l.status == 'archived' else 'Archive' }}</button>
+          </form>
+          <form method="post" action="{{ url_for('listings.set_status', listing_id=l.listing_id) }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="sold">
+            <button class="btn btn-outline-info" type="submit">Mark sold</button>
+          </form>
+          <form method="post" action="{{ url_for('listings.delete', listing_id=l.listing_id) }}"
+                onsubmit="return confirm('Delete this listing permanently?');">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button class="btn btn-outline-danger" type="submit">Delete</button>
+          </form>
+        </div>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="5" class="text-center text-muted py-4">You have not posted anything yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

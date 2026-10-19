@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Categories - Admin{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Category management</h1>
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card p-4">
+      <h2 class="h6">Add a category</h2>
+      <form method="post">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="mb-3">
+          <label class="form-label">Name *</label>
+          <input name="name" class="form-control" required minlength="2" maxlength="50" placeholder="e.g. Sports equipment">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" rows="2" maxlength="200"></textarea>
+        </div>
+        <button class="btn btn-success w-100" type="submit">Add category</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="table-responsive card p-2">
+    <table class="table table-hover align-middle mb-0">
+      <thead><tr><th>Name</th><th>Listings</th><th>Status</th><th class="text-end">Action</th></tr></thead>
+      <tbody>
+      {% for c in categories %}
+        <tr>
+          <td><strong>{{ c.name }}</strong><br><span class="text-muted small">{{ c.description }}</span></td>
+          <td>{{ c.listing_count }}</td>
+          <td>{% if c.is_archived %}<span class="badge bg-secondary">archived</span>{% else %}<span class="badge bg-success">active</span>{% endif %}</td>
+          <td class="text-end">
+            <form method="post" action="{{ url_for('admin.archive_category', category_id=c.category_id) }}">
+              <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+              <button class="btn btn-sm btn-outline-secondary" type="submit">{{ 'Restore' if c.is_archived else 'Archive' }}</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

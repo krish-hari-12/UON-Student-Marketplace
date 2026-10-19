@@ -1,0 +1,4 @@
+# UoN Student Marketplace - Python dependencies
+Flask>=3.0
+PyMySQL>=1.1        # only required for the optional MySQL backend
+pytest>=8.0         # test suite (tests/)

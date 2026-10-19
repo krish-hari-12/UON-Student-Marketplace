@@ -1,0 +1,96 @@
+/* UoN Student Marketplace - custom styles layered on Bootstrap 5 */
+:root {
+  --uon-navy: #14385f;
+  --uon-green: #009a44;
+}
+body { background: #f6f8fa; min-height: 100vh; display: flex; flex-direction: column; }
+main { flex: 1; }
+
+.site-header { background: var(--uon-navy); }
+.brand-dot { color: var(--uon-green); }
+
+/* Home page hero */
+.hero {
+  position: relative;
+  min-height: 500px;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+/* University building background */
+.hero-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Dark overlay to make text easier to read */
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(20, 56, 95, 0.95) 0%,
+    rgba(20, 56, 95, 0.78) 42%,
+    rgba(20, 56, 95, 0.25) 72%,
+    rgba(20, 56, 95, 0.05) 100%
+  );
+}
+
+/* Content sits above background and overlay */
+.hero-content {
+  position: relative;
+  z-index: 2;
+  min-height: 500px;
+  padding: 55px 60px;
+}
+
+/* Five students on the right */
+.hero-people-container {
+  position: relative;
+  height: 430px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.hero-people {
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  max-height: 450px;
+  object-fit: contain;
+  object-position: bottom center;
+}
+
+.site-footer { background: #10233a; color: #c8d4e0; font-size: 0.875rem; }
+
+/* Listing cards */
+.listing-card { transition: box-shadow .15s ease, transform .15s ease; position: relative; }
+.listing-card:hover { box-shadow: 0 .5rem 1.25rem rgba(20,56,95,.15); transform: translateY(-2px); }
+.card-img-wrap { height: 160px; overflow: hidden; }
+.card-img-top { height: 160px; width: 100%; object-fit: cover; }
+.img-placeholder { height: 160px; font-size: 3rem; background: #eef2f6; }
+.detail-img { height: 420px; object-fit: cover; background: #eef2f6; }
+.detail-img.img-placeholder { font-size: 7rem; height: 420px; }
+
+.category-card { border: 1px solid #e3e8ee; }
+.category-card:hover { border-color: var(--uon-green); }
+
+.filter-card { border: 1px solid #e3e8ee; }
+.thumb { width: 84px; height: 84px; object-fit: cover; }
+
+/* Simple message bubbles (messaging UI) */
+.message-thread { max-height: 480px; overflow-y: auto; }
+.message-row { display: flex; margin-bottom: .75rem; }
+.message-row.mine { justify-content: flex-end; }
+.message-row .bubble {
+  max-width: 75%; border-radius: 1rem; padding: .6rem .9rem;
+  background: #eef2f6;
+}
+.message-row.mine .bubble { background: #d1f0de; }
+
+.stat-card:hover { border-color: var(--uon-green); }

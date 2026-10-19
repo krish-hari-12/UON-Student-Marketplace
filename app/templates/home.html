@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Home - {{ app_name }}{% endblock %}
+{% block content %}
+
+<!-- Hero + keyword search (FR-06) -->
+<!-- Hero + keyword search -->
+<section class="hero rounded-3 mb-4 text-white">
+
+  <!-- University building background -->
+  <img
+    src="{{ url_for('static', filename='img/uon-building.png') }}"
+    class="hero-background"
+    alt="University of Newcastle">
+
+  <!-- Dark overlay -->
+  <div class="hero-overlay"></div>
+
+  <div class="hero-content">
+    <div class="row align-items-center g-4">
+
+      <!-- LEFT SIDE: Text and search -->
+      <div class="col-lg-7">
+
+        <h1 class="display-6 fw-bold">
+          Buy, sell and connect with UoN students
+        </h1>
+
+        <p class="lead mb-4">
+          A trusted marketplace built only for University of Newcastle
+          students — textbooks, furniture, electronics, housing,
+          transport and services.
+        </p>
+
+        <form
+          method="get"
+          action="{{ url_for('main.browse') }}"
+          class="d-flex gap-2">
+
+          <input
+            class="form-control form-control-lg"
+            type="search"
+            name="q"
+            placeholder="Search listings… e.g. textbook, desk, bike">
+
+          <button
+            class="btn btn-success btn-lg px-4"
+            type="submit">
+            Search
+          </button>
+
+        </form>
+
+      </div>
+
+      <!-- RIGHT SIDE: Five students -->
+      <div class="col-lg-5 hero-people-container">
+
+        <img
+          src="{{ url_for('static', filename='img/castle-coverts-people.png') }}"
+          class="hero-people"
+          alt="UoN students">
+
+      </div>
+
+    </div>
+  </div>
+
+</section>
+
+<!-- Category shortcuts -->
+<section class="mb-5">
+  <h2 class="h4 mb-3">Browse by category</h2>
+  <div class="row g-3">
+    {% for cat in nav_categories %}
+    <div class="col-6 col-md-4 col-lg-3">
+      <a class="text-decoration-none" href="{{ url_for('main.browse', category=cat.category_id) }}">
+        <div class="card category-card h-100 text-center p-3">
+          <div class="fs-1">{{ ['🛋️','💻','📚','🚲','🏠','🔧','🏀','👖'][loop.index0 % 8] }}</div>
+          <div class="fw-semibold">{{ cat.name }}</div>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- Newest listings -->
+<section>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 mb-0">Latest listings</h2>
+    <a class="btn btn-outline-success btn-sm" href="{{ url_for('main.browse') }}">View all</a>
+  </div>
+  <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-lg-3">
+    {% for l in latest %}
+      {% include "listings/_card.html" %}
+    {% else %}
+      <p class="text-muted">No active listings yet — be the first to post one!</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

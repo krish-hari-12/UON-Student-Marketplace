@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Messages - {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Messages</h1>
+<div class="list-group">
+  {% for c in conversations %}
+  <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+     href="{{ url_for('messages.thread', conversation_id=c.conversation_id) }}">
+    <div>
+      <div class="fw-semibold">{{ c.listing_title }}</div>
+      <div class="text-muted small">
+        {% if c.seller_id == session.get('user_id') %}
+          Buyer: {{ c.buyer_name }}
+        {% else %}
+          Seller: {{ c.seller_name }}
+        {% endif %}
+      </div>
+      <div class="small text-truncate" style="max-width: 60ch;">
+        {% if c.last_message %}{{ c.last_message }}{% else %}<em>No messages yet</em>{% endif %}
+      </div>
+    </div>
+    {% if c.unread %}
+      <span class="badge rounded-pill bg-danger">{{ c.unread }} new</span>
+    {% endif %}
+  </a>
+  {% else %}
+  <div class="alert alert-light border">No conversations yet. Open any listing and use
+    “Contact seller” to start one.</div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit listing' if listing else 'Post an ad' }} - {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="h3 mb-1">{{ 'Edit listing' if listing else 'Post a new ad' }}</h1>
+<p class="text-muted">Fields marked * are required. Your listing will be visible to all UoN students.</p>
+
+<form method="post" enctype="multipart/form-data" class="card p-4 needs-validation"
+      action="{{ url_for('listings.edit', listing_id=listing.listing_id) if listing else url_for('listings.create') }}">
+  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+  <div class="row g-3">
+    <div class="col-md-8">
+      <label class="form-label">Title * <span class="text-danger">{{ errors.title }}</span></label>
+      <input name="title" class="form-control" required minlength="5" maxlength="100"
+             placeholder="e.g. Second-hand study desk" value="{{ form.title or '' }}">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Price (AUD) * <span class="text-danger">{{ errors.price }}</span></label>
+      <div class="input-group">
+        <span class="input-group-text">$</span>
+        <input name="price" type="number" step="0.01" min="0" max="100000" class="form-control" required
+               placeholder="0.00 = free" value="{{ form.price if form.price is defined else (listing.price if listing else '') }}">
+      </div>
+      <div class="form-text">Enter 0 if the item is free.</div>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Category * <span class="text-danger">{{ errors.category_id }}</span></label>
+      <select name="category_id" class="form-select" required>
+        <option value="">Choose a category…</option>
+        {% for cat in categories %}
+        <option value="{{ cat.category_id }}"
+          {% if (form.category_id and form.category_id|int == cat.category_id) or (listing and listing.category_id == cat.category_id) %}selected{% endif %}>
+          {{ cat.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Condition * <span class="text-danger">{{ errors.condition }}</span></label>
+      <select name="condition" class="form-select" required>
+        <option value="">Choose a condition…</option>
+        {% for c in ['New','Like new','Good','Fair','Needs repair'] %}
+        <option value="{{ c }}" {% if form.condition == c or (listing and listing.condition == c) %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12">
+      <label class="form-label">Description * <span class="text-danger">{{ errors.description }}</span></label>
+      <textarea name="description" class="form-control" rows="5" required minlength="20" maxlength="2000"
+                placeholder="Describe the item: age, size, why you are selling, pickup details…">{{ form.description or (listing.description if listing else '') }}</textarea>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">General location</label>
+      <input name="location" class="form-control" maxlength="120"
+             placeholder="e.g. Callaghan campus" value="{{ form.location or (listing.location if listing else '') }}">
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Photos <span class="text-muted small">(up to 3, PNG/JPG/GIF/WEBP, max 5&nbsp;MB each)</span></label>
+      <input name="images" type="file" class="form-control" accept=".png,.jpg,.jpeg,.gif,.webp" multiple>
+      {% if listing and listing.image_count %}
+      <div class="form-text">This listing already has {{ listing.image_count }} photo(s) — new photos are added to them.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="mt-4 d-flex gap-2">
+    <button class="btn btn-success px-4" type="submit">{{ 'Save changes' if listing else 'Publish listing' }}</button>
+    <a class="btn btn-outline-secondary" href="{{ url_for('listings.my_listings') if listing else url_for('main.home') }}">Cancel</a>
+  </div>
+</form>
+
+{% if listing %}
+<div class="card mt-4 p-4">
+  <h2 class="h6">Current photos</h2>
+  <div class="d-flex gap-3 flex-wrap">
+    {% for img in (images or []) %}
+    <div class="text-center">
+      <img src="{{ url_for('main.uploaded_file', filename=img.file_path) }}" class="rounded border thumb" alt="photo">
+      <form method="post" action="{{ url_for('listings.delete_image', listing_id=listing.listing_id, image_id=img.image_id) }}"
+            onsubmit="return confirm('Remove this photo?');">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button class="btn btn-link btn-sm text-danger" type="submit">remove</button>
+      </form>
+    </div>
+    {% else %}
+    <p class="text-muted mb-0">No photos yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

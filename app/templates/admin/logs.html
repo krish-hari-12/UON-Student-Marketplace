@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Logs - Admin{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Audit trail &amp; email log</h1>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card p-4">
+      <h2 class="h6">Administrator audit trail (BR-08)</h2>
+      <div class="table-responsive">
+      <table class="table table-sm table-striped small">
+        <thead><tr><th>When</th><th>Admin</th><th>Action</th><th>Entity</th><th>Details</th></tr></thead>
+        <tbody>
+        {% for a in audit %}
+        <tr><td>{{ a.created_at }}</td><td>{{ a.admin_name }}</td><td>{{ a.action }}</td>
+            <td>{{ a.entity_type }} {{ a.entity_id }}</td><td>{{ a.details }}</td></tr>
+        {% else %}
+        <tr><td colspan="5" class="text-muted">No entries yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card p-4">
+      <h2 class="h6">Email notification log (FR-10)</h2>
+      <p class="text-muted small">Emails are simulated when SMTP is not configured; every notification is recorded here.</p>
+      <div class="table-responsive">
+      <table class="table table-sm table-striped small">
+        <thead><tr><th>When</th><th>To</th><th>Subject</th><th>Status</th></tr></thead>
+        <tbody>
+        {% for e in emails %}
+        <tr><td>{{ e.sent_at }}</td><td>{{ e.recipient }}</td><td>{{ e.subject|truncate(35) }}</td><td>{{ e.status }}</td></tr>
+        {% else %}
+        <tr><td colspan="4" class="text-muted">No emails yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}My favourites - {{ app_name }}{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">My favourites</h1>
+<div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-lg-3">
+  {% for l in listings %}
+    {% include "listings/_card.html" %}
+  {% else %}
+    <div class="col-12"><div class="alert alert-light border">You have not saved any listings yet.
+      Browse the <a href="{{ url_for('main.browse') }}">marketplace</a> and use “Save to favourites”.</div></div>
+  {% endfor %}
+</div>
+{% endblock %}
