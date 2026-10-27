@@ -4,7 +4,7 @@ init_db.py
 ==========
 Utility to (re)create the SQLite database from schema.sql + seed.sql.
 
-Usage (from the database folder):
+Usage (from the database folder): #Hari Changes
     python init_db.py          # create the DB only if it does not exist
     python init_db.py --reset  # DELETE and rebuild the database from scratch
 """
