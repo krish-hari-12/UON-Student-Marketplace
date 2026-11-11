@@ -1,0 +1,162 @@
+
+{% extends "base.html" %}
+
+{% block title %}Ticket #{{ ticket.ticket_id }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- Return to the student's list of submitted support requests. -->
+  <div class="mb-4">
+    <a
+      href="{{ url_for('support.tickets') }}"
+      class="text-decoration-none"
+    >
+      &larr; Back to My Support Tickets
+    </a>
+  </div>
+
+  <!-- Display the original ticket details and its current status. -->
+  <div class="card p-4 mb-4">
+
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <h1 class="h4 mb-2">{{ ticket.subject }}</h1>
+
+        <p class="text-muted mb-0">
+          Ticket #{{ ticket.ticket_id }} |
+          Category: {{ ticket.category }}
+        </p>
+      </div>
+
+      <!-- Use status badges to make the ticket's progress easy to identify. -->
+      {% if ticket.status == 'open' %}
+        <span class="badge bg-primary">Open</span>
+      {% elif ticket.status == 'in_progress' %}
+        <span class="badge bg-warning text-dark">In Progress</span>
+      {% elif ticket.status == 'resolved' %}
+        <span class="badge bg-success">Resolved</span>
+      {% else %}
+        <span class="badge bg-secondary">
+          {{ ticket.status|replace('_', ' ')|title }}
+        </span>
+      {% endif %}
+    </div>
+
+    <hr>
+
+    <!-- Keep the original description separate from subsequent replies. -->
+    <h2 class="h6">Original Description</h2>
+
+    <p class="mb-2" style="white-space: pre-wrap;">{{ ticket.description }}</p>
+
+    <small class="text-muted">
+      Submitted: {{ ticket.created_at }}
+    </small>
+
+  </div>
+
+  <!-- Display the conversation between the student and the support team. -->
+  <div class="card p-4 mb-4">
+
+    <h2 class="h5 mb-3">Conversation</h2>
+
+    {% if messages %}
+
+      {% for message in messages %}
+
+        <!-- Different background colours distinguish student and support replies. -->
+        <div
+          class="border rounded p-3 mb-3
+          {% if message.sender_id == ticket.user_id %}
+            bg-light
+          {% else %}
+            bg-success bg-opacity-10
+          {% endif %}"
+        >
+
+          <div class="d-flex justify-content-between flex-wrap mb-2">
+
+            <!-- Identify who sent each message in the conversation. -->
+            <strong>
+              {% if message.sender_id == ticket.user_id %}
+                You
+              {% elif message.role == 'admin' %}
+                Support Team
+              {% else %}
+                {{ message.first_name }} {{ message.last_name }}
+              {% endif %}
+            </strong>
+
+            <small class="text-muted">
+              {{ message.sent_at }}
+            </small>
+
+          </div>
+
+          <!-- Preserve line breaks in messages entered by students or administrators. -->
+          <p class="mb-0" style="white-space: pre-wrap;">{{ message.body }}</p>
+
+        </div>
+
+      {% endfor %}
+
+    {% else %}
+
+      <!-- Explain why the conversation area is empty when no replies exist. -->
+      <p class="text-muted mb-0">
+        No replies yet. Our support team will respond here.
+      </p>
+
+    {% endif %}
+
+  </div>
+
+  {% if ticket.status != 'resolved' %}
+
+    <!-- Allow the student to reply while the ticket remains unresolved. -->
+    <div class="card p-4">
+
+      <h2 class="h5 mb-3">Send a Message</h2>
+
+      <form
+        method="post"
+        action="{{ url_for('support.ticket_detail', ticket_id=ticket.ticket_id) }}"
+      >
+
+        <!-- Include the CSRF token to protect the message submission. -->
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+        <div class="mb-3">
+          <label for="body" class="form-label">Your Message</label>
+
+          <textarea
+            id="body"
+            name="body"
+            class="form-control"
+            rows="4"
+            maxlength="3000"
+            placeholder="Type your message here..."
+            required
+          ></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-success">
+          Send Message
+        </button>
+
+      </form>
+
+    </div>
+
+  {% else %}
+
+    <!-- Resolved tickets are read-only; students can still view their conversation. -->
+    <div class="alert alert-success" role="status">
+      This ticket has been resolved. Further messages are disabled.
+    </div>
+
+  {% endif %}
+
+</div>
+{% endblock %}

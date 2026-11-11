@@ -1,42 +1,105 @@
+
 {% extends "base.html" %}
+
 {% block title %}Log in - {{ app_name }}{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
-  <div class="col-md-6 col-lg-5">
-    <div class="card p-4">
-      <h1 class="h4 mb-3 text-center">Log in</h1>
-      <form method="post" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
-        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-        <div class="mb-3">
-          <label for="login-email" class="form-label">UoN email</label>
-<input
-    type="email"
-    id="login-email"
-    name="email"
-    class="form-control"
-    autocomplete="username"
-    placeholder="firstname.lastname@uon.edu.au"
-    value="{{ form.email or '' }}"
-    required
->
+    <div class="col-md-6 col-lg-5">
+        <div class="card p-4">
+            <h1 class="h4 mb-3 text-center">Log in</h1>
+
+            <form method="post" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
+                <input
+                    type="hidden"
+                    name="_csrf"
+                    value="{{ csrf_token() }}"
+                >
+
+                <div class="mb-3">
+                    <label for="login-email" class="form-label">UoN email</label>
+                    <input
+                        type="email"
+                        id="login-email"
+                        name="email"
+                        class="form-control"
+                        autocomplete="username"
+                        placeholder="firstname.lastname@uon.edu.au"
+                        value="{{ form.email or '' }}"
+                        required
+                    >
+                </div>
+
+                <div class="mb-3">
+                    <label for="login-password" class="form-label">Password</label>
+
+                    <div class="input-group">
+                        <input
+                            type="password"
+                            id="login-password"
+                            name="password"
+                            class="form-control"
+                            autocomplete="current-password"
+                            required
+                        >
+
+                        <button
+                            class="btn btn-outline-secondary"
+                            type="button"
+                            id="toggleLoginPassword"
+                            aria-label="Show password"
+                            aria-controls="login-password"
+                            aria-pressed="false"
+                            style="width: 50px;"
+                        >
+                            👁️
+                        </button>
+                    </div>
+
+                    <div class="text-end mt-2">
+                        <a
+                            href="{{ url_for('auth.forgot_password') }}"
+                            class="small text-success text-decoration-none"
+                        >
+                            Forgot Password?
+                        </a>
+                    </div>
+                </div>
+
+                <button class="btn btn-success w-100" type="submit">
+                    Log in
+                </button>
+            </form>
+
+            <hr>
+
+            <p class="text-center text-muted mb-0">
+                New to the marketplace?
+                <a href="{{ url_for('auth.register') }}">
+                    Register with your UoN email
+                </a>
+            </p>
         </div>
-        <div class="mb-3">
-          <label for="login-password" class="form-label">Password</label>
-<input
-    type="password"
-    id="login-password"
-    name="password"
-    class="form-control"
-    autocomplete="current-password"
-    required
->
-        </div>
-        <button class="btn btn-success w-100" type="submit">Log in</button>
-      </form>
-      <hr>
-      <p class="text-center text-muted mb-0">New to the marketplace?
-        <a href="{{ url_for('auth.register') }}">Register with your UoN email</a></p>
     </div>
-  </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleButton = document.getElementById('toggleLoginPassword');
+    const passwordInput = document.getElementById('login-password');
+
+    if (!toggleButton || !passwordInput) {
+        return;
+    }
+
+    toggleButton.addEventListener('click', () => {
+        const isHidden = passwordInput.type === 'password';
+
+        passwordInput.type = isHidden ? 'text' : 'password';
+        toggleButton.textContent = isHidden ? '🙈' : '👁️';
+        toggleButton.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+        toggleButton.setAttribute('aria-pressed', String(isHidden));
+    });
+});
+</script>
 {% endblock %}

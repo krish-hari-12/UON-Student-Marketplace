@@ -1,48 +1,120 @@
+
 {% extends "base.html" %}
+
 {% block title %}Listings - Admin{% endblock %}
+
 {% block content %}
 <h1 class="h3 mb-4">Listing management</h1>
+
 <form method="get" class="row g-2 mb-3">
-  <div class="col-md-5"><input name="q" class="form-control" placeholder="Search titles…" value="{{ q }}"></div>
-  <div class="col-md-3">
-    <select name="status" class="form-select">
-      <option value="">All statuses</option>
-      {% for s in ['active','archived','sold','removed'] %}
-      <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="col-md-2"><button class="btn btn-success w-100">Filter</button></div>
+    <div class="col-md-5">
+        <input
+            type="search"
+            name="q"
+            class="form-control"
+            placeholder="Search titles..."
+            value="{{ q }}"
+        >
+    </div>
+
+    <div class="col-md-3">
+        <select name="status" class="form-select">
+            <option value="">All statuses</option>
+            {% for s in ['active', 'archived', 'sold', 'removed'] %}
+            <option value="{{ s }}" {% if status == s %}selected{% endif %}>
+                {{ s|capitalize }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-success w-100">
+            Filter
+        </button>
+    </div>
 </form>
+
 <div class="table-responsive card p-2">
-<table class="table table-hover align-middle mb-0">
-  <thead><tr><th>Title</th><th>Owner</th><th>Category</th><th class="text-end">Price</th><th>Status</th><th class="text-end">Moderate</th></tr></thead>
-  <tbody>
-  {% for l in listings %}
-    <tr>
-      <td><a href="{{ url_for('listings.detail', listing_id=l.listing_id) }}">{{ l.title|truncate(40) }}</a></td>
-      <td>{{ l.owner_name }}</td>
-      <td>{{ l.category_name }}</td>
-      <td class="text-end">${{ '%.2f'|format(l.price) }}</td>
-      <td><span class="badge bg-secondary">{{ l.status }}</span></td>
-      <td class="text-end">
-        <div class="btn-group btn-group-sm">
-          {% for s, label in [('active','Restore'), ('archived','Archive'), ('removed','Remove')] %}
-            {% if l.status != s %}
-            <form method="post" action="{{ url_for('admin.moderate_listing', listing_id=l.listing_id) }}">
-              <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-              <input type="hidden" name="status" value="{{ s }}">
-              <button class="btn btn-outline-{{ 'success' if s == 'active' else ('secondary' if s == 'archived' else 'danger') }}" type="submit">{{ label }}</button>
-            </form>
-            {% endif %}
-          {% endfor %}
-        </div>
-      </td>
-    </tr>
-  {% else %}
-    <tr><td colspan="6" class="text-center text-muted py-4">No listings found.</td></tr>
-  {% endfor %}
-  </tbody>
-</table>
+    <table class="table table-hover align-middle mb-0">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Owner</th>
+                <th>Category</th>
+                <th class="text-end">Price</th>
+                <th>Status</th>
+                <th class="text-end">Moderate</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for l in listings %}
+            <tr>
+                <td>
+                    <a href="{{ url_for('listings.detail', listing_id=l.listing_id) }}">
+                        {{ l.title|truncate(40) }}
+                    </a>
+                </td>
+
+                <td>{{ l.owner_name }}</td>
+                <td>{{ l.category_name }}</td>
+
+                <td class="text-end">
+                    ${{ '%.2f'|format(l.price) }}
+                </td>
+
+                <td>
+                    <span class="badge bg-secondary">
+                        {{ l.status|capitalize }}
+                    </span>
+                </td>
+
+                <td class="text-end">
+                    <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap">
+                        {% for s, label in [
+                            ('active', 'Restore'),
+                            ('archived', 'Archive'),
+                            ('sold', 'Mark as Sold')
+                        ] %}
+                            {% if l.status != s %}
+                            <form
+                                method="post"
+                                class="mb-0"
+                                action="{{ url_for('admin.moderate_listing', listing_id=l.listing_id) }}"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="_csrf"
+                                    value="{{ csrf_token() }}"
+                                >
+
+                                <input
+                                    type="hidden"
+                                    name="status"
+                                    value="{{ s }}"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-sm btn-outline-{{ 'success' if s == 'active' else ('secondary' if s == 'archived' else 'primary') }}"
+                                >
+                                    {{ label }}
+                                </button>
+                            </form>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center text-muted py-4">
+                    No listings found.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}

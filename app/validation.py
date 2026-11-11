@@ -1,28 +1,18 @@
-"""
-app/validation.py
-=================
-Server-side input validation.
+# input validation.
+# Validates form data on the server before database operations.
+# Each validator returns cleaned data and a dictionary of validation errors.
 
-Every form in the application is validated here before any database
-operation, independent of the client-side (HTML5) checks, so that the
-system stays correct even when requests are crafted manually.
 
-Each validator returns a tuple ``(clean_data, errors)`` where *errors* is a
-dictionary mapping field name -> human readable message.
-"""
 import re
-
 from .db import get_db
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 PHONE_RE = re.compile(r"^[0-9+\-\s()]{6,20}$")
 
 
-# ----------------------------------------------------------------------
-# Registration / profile validation (FR-01, FR-03)
-# ----------------------------------------------------------------------
+# Registration validation
 def validate_registration(form):
-    """Validate the registration form including the approved-UoN-email rule."""
+    #Validate registration details and the approved UoN email address."""
     clean, errors = {}, {}
 
     clean["first_name"] = _text(form.get("first_name"), 2, 50)
@@ -42,7 +32,9 @@ def validate_registration(form):
             "(@uon.edu.au or @newcastle.edu.au)."
         )
     elif get_db().query(
-        "SELECT user_id FROM users WHERE email = ?", (email,), one=True
+        "SELECT user_id FROM users WHERE email = ?",
+        (email,),
+        one=True,
     ):
         errors["email"] = "An account with this email already exists."
     else:
@@ -64,8 +56,9 @@ def validate_registration(form):
     return clean, errors
 
 
+# Profile validation
 def validate_profile(form, user_id):
-    """Validate the editable profile fields (names and phone)."""
+    #Validate the editable profile details."""
     clean, errors = {}, {}
 
     clean["first_name"] = _text(form.get("first_name"), 2, 50)
@@ -84,8 +77,9 @@ def validate_profile(form, user_id):
     return clean, errors
 
 
+# Password change validation
 def validate_password_change(form):
-    """Validate a change-of-password request (current password required)."""
+    #Validate a password change using the current password.
     from .security import verify_password
 
     clean, errors = {}, {}
@@ -95,27 +89,24 @@ def validate_password_change(form):
         one=True,
     )
 
-    current = form.get("current_password") or ""
-    if not user or not verify_password(current, user["password_hash"]):
+    current_password = form.get("current_password") or ""
+    if not user or not verify_password(current_password, user["password_hash"]):
         errors["current_password"] = "Your current password is incorrect."
 
-    new = form.get("new_password") or ""
-    if len(new) < 8:
+    new_password = form.get("new_password") or ""
+    if len(new_password) < 8:
         errors["new_password"] = "New password must be at least 8 characters long."
-    clean["new_password"] = new
+    clean["new_password"] = new_password
 
-    if form.get("confirm_password") != new:
+    if form.get("confirm_password") != new_password:
         errors["confirm_password"] = "Passwords do not match."
 
     return clean, errors
 
 
-# ----------------------------------------------------------------------
-# Listing validation (BR-04, FR-04)
-# ----------------------------------------------------------------------
+# Listing validation
 def validate_listing(form):
-    """Validate listing fields. BR-04: title, description, price, category
-    and condition are the minimum required fields."""
+    #Validate the required marketplace listing details."""
     clean, errors = {}, {}
 
     clean["title"] = _text(form.get("title"), 5, 100)
@@ -126,7 +117,7 @@ def validate_listing(form):
     if not clean["description"]:
         errors["description"] = "Description is required (20-2000 characters)."
 
-    # Price: non-negative number with at most 2 decimal places; 0 = free.
+    # Accept non-negative prices, including zero for free listings.
     price_raw = (form.get("price") or "").strip().replace("$", "")
     try:
         price = round(float(price_raw), 2)
@@ -138,10 +129,15 @@ def validate_listing(form):
 
     category_id = form.get("category_id", "")
     category = get_db().query(
-        "SELECT category_id FROM categories WHERE category_id = ? AND is_archived = 0",
+        """
+        SELECT category_id
+        FROM categories
+        WHERE category_id = ? AND is_archived = 0
+        """,
         (category_id,),
         one=True,
     )
+
     if not category:
         errors["category_id"] = "Choose a valid category."
     else:
@@ -156,28 +152,30 @@ def validate_listing(form):
         clean["condition"] = condition
 
     clean["location"] = _text(form.get("location"), 0, 120)
+
     return clean, errors
 
 
-# ----------------------------------------------------------------------
-# Small helpers
-# ----------------------------------------------------------------------
+# Helper functions
 def _text(value, min_len, max_len):
-    """Strip and length-check free text; returns '' when below min_len."""
+    #Remove extra spaces and check the text length."""
     value = (value or "").strip()
+
     if min_len <= len(value) <= max_len:
         return value
+
     return ""
 
 
 def _current_user_id():
+    #Return the current user's ID from the session."""
     from flask import session
 
     return session.get("user_id")
 
 
 def form_app_domains():
-    """Read the approved email domains from the live app config."""
+    #Return the approved email domains from application configuration."""
     from flask import current_app
 
     return current_app.config["ALLOWED_EMAIL_DOMAINS"]

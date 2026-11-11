@@ -1,61 +1,282 @@
+
 {% extends "base.html" %}
-{% block title %}My profile - {{ app_name }}{% endblock %}
+
+{% block title %}My Profile - {{ app_name }}{% endblock %}
+
 {% block content %}
-<h1 class="h3 mb-4">My profile</h1>
+
+<!-- Page heading for the student's account and profile settings. -->
+<h1 class="h3 mb-4">My Profile</h1>
+
 <div class="row g-4">
+
+  <!-- Account details and profile photo management. -->
   <div class="col-lg-6">
     <div class="card p-4 h-100">
-      <h2 class="h5">Account details</h2>
+
+      <h2 class="h5">Account Details</h2>
+
+      <!-- Display the uploaded profile photo or a default avatar. -->
+      <div class="mb-4 text-center">
+
+        {% if user.profile_photo %}
+
+          <img
+            src="{{ url_for('auth.profile_photo_file', filename=user.profile_photo) }}"
+            alt="Profile photo"
+            class="rounded-circle mb-3"
+            style="width: 120px; height: 120px; object-fit: cover;"
+          >
+
+        {% else %}
+
+          <!-- Use the student's first initial when no photo is available. -->
+          <div
+            class="rounded-circle bg-light border d-flex align-items-center justify-content-center mx-auto mb-3"
+            style="width: 120px; height: 120px;"
+            aria-label="Default profile avatar"
+          >
+            <span class="text-secondary fs-1" aria-hidden="true">
+              {{ user.first_name[0]|upper }}
+            </span>
+          </div>
+
+        {% endif %}
+
+        <!-- Allow students to upload or replace their profile photo. -->
+        <form
+          method="post"
+          action="{{ url_for('auth.upload_profile_photo') }}"
+          enctype="multipart/form-data"
+        >
+
+          <!-- Protect the photo upload request against CSRF attacks. -->
+          <input
+            type="hidden"
+            name="_csrf"
+            value="{{ csrf_token() }}"
+          >
+
+          <label for="profile_photo" class="visually-hidden">
+            Choose a profile photo
+          </label>
+
+          <input
+            type="file"
+            id="profile_photo"
+            name="profile_photo"
+            class="form-control mb-2"
+            accept=".png,.jpg,.jpeg,.webp"
+            required
+          >
+
+          <small class="text-muted d-block mb-2">
+            PNG, JPG, JPEG or WEBP. Maximum size: 5 MB.
+          </small>
+
+          <button type="submit" class="btn btn-outline-success btn-sm">
+            {% if user.profile_photo %}
+              Change Profile Photo
+            {% else %}
+              Upload Profile Photo
+            {% endif %}
+          </button>
+
+        </form>
+
+        {% if user.profile_photo %}
+
+          <!-- Allow students to return to the default avatar without deleting their account. -->
+          <form
+            method="post"
+            action="{{ url_for('auth.reset_profile_photo') }}"
+            class="mt-2"
+            onsubmit="return confirm('Use the default profile avatar?');"
+          >
+
+            <input
+              type="hidden"
+              name="_csrf"
+              value="{{ csrf_token() }}"
+            >
+
+            <button type="submit" class="btn btn-outline-secondary btn-sm">
+              <i class="bi bi-person-circle me-1" aria-hidden="true"></i>
+              Use Default Avatar
+            </button>
+
+          </form>
+
+        {% endif %}
+
+      </div>
+
+      <!-- Update the student's personal account information. -->
       <form method="post" action="{{ url_for('auth.profile') }}">
-        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+        <input
+          type="hidden"
+          name="_csrf"
+          value="{{ csrf_token() }}"
+        >
+
         <div class="mb-3">
-          <label class="form-label">First name *</label>
-          <input name="first_name" class="form-control" required minlength="2" maxlength="50" value="{{ user.first_name }}">
-          <div class="text-danger small">{{ errors.first_name }}</div>
+          <label for="first_name" class="form-label">
+            First Name *
+          </label>
+
+          <input
+            type="text"
+            id="first_name"
+            name="first_name"
+            class="form-control"
+            required
+            minlength="2"
+            maxlength="50"
+            value="{{ user.first_name }}"
+          >
+
+          <div class="text-danger small">
+            {{ errors.first_name }}
+          </div>
         </div>
+
         <div class="mb-3">
-          <label class="form-label">Last name *</label>
-          <input name="last_name" class="form-control" required minlength="2" maxlength="50" value="{{ user.last_name }}">
-          <div class="text-danger small">{{ errors.last_name }}</div>
+          <label for="last_name" class="form-label">
+            Last Name *
+          </label>
+
+          <input
+            type="text"
+            id="last_name"
+            name="last_name"
+            class="form-control"
+            required
+            minlength="2"
+            maxlength="50"
+            value="{{ user.last_name }}"
+          >
+
+          <div class="text-danger small">
+            {{ errors.last_name }}
+          </div>
         </div>
+
         <div class="mb-3">
-          <label class="form-label">Phone</label>
-          <input name="phone" class="form-control" value="{{ user.phone or '' }}">
-          <div class="text-danger small">{{ errors.phone }}</div>
+          <label for="phone" class="form-label">
+            Phone
+          </label>
+
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            class="form-control"
+            value="{{ user.phone or '' }}"
+          >
+
+          <div class="text-danger small">
+            {{ errors.phone }}
+          </div>
         </div>
+
+        <!-- The registered email is displayed but cannot be changed here. -->
         <div class="mb-3">
-          <label class="form-label">Email (cannot be changed)</label>
-          <input class="form-control" value="{{ user.email }}" disabled>
+          <label for="email" class="form-label">
+            Email (already added)
+          </label>
+
+          <input
+            type="email"
+            id="email"
+            class="form-control"
+            value="{{ user.email }}"
+            disabled
+          >
         </div>
-        <div class="mb-1">
-          <span class="badge {{ 'bg-success-subtle text-success-emphasis' if user.status == 'active' else 'bg-danger-subtle text-danger-emphasis' }}">{{ user.status }}</span>
-          <span class="badge bg-secondary">{{ user.role }}</span>
-        </div>
-        <button class="btn btn-success mt-3" type="submit">Save changes</button>
+
+        <button class="btn btn-success mt-3" type="submit">
+          Save Changes
+        </button>
+
       </form>
+
     </div>
   </div>
 
+  <!-- Password management is kept separate from personal profile updates. -->
   <div class="col-lg-6">
     <div class="card p-4">
-      <h2 class="h5">Change password</h2>
-      <form method="post" action="{{ url_for('auth.change_password') }}">
-        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+      <h2 class="h5">Change Password</h2>
+
+      <form
+        method="post"
+        action="{{ url_for('auth.change_password') }}"
+      >
+
+        <!-- Protect password changes with CSRF validation. -->
+        <input
+          type="hidden"
+          name="_csrf"
+          value="{{ csrf_token() }}"
+        >
+
         <div class="mb-3">
-          <label class="form-label">Current password</label>
-          <input type="password" name="current_password" class="form-control" required>
+          <label for="current_password" class="form-label">
+            Current Password
+          </label>
+
+          <input
+            type="password"
+            id="current_password"
+            name="current_password"
+            class="form-control"
+            autocomplete="current-password"
+            required
+          >
         </div>
+
         <div class="mb-3">
-          <label class="form-label">New password (min 8 characters)</label>
-          <input type="password" name="new_password" class="form-control" required minlength="8">
+          <label for="new_password" class="form-label">
+            New Password (min 8 characters)
+          </label>
+
+          <input
+            type="password"
+            id="new_password"
+            name="new_password"
+            class="form-control"
+            minlength="8"
+            autocomplete="new-password"
+            required
+          >
         </div>
+
         <div class="mb-3">
-          <label class="form-label">Confirm new password</label>
-          <input type="password" name="confirm_password" class="form-control" required>
+          <label for="confirm_password" class="form-label">
+            Confirm New Password
+          </label>
+
+          <input
+            type="password"
+            id="confirm_password"
+            name="confirm_password"
+            class="form-control"
+            autocomplete="new-password"
+            required
+          >
         </div>
-        <button class="btn btn-outline-primary" type="submit">Update password</button>
+
+        <button class="btn btn-outline-primary" type="submit">
+          Update Password
+        </button>
+
       </form>
+
     </div>
   </div>
+
 </div>
+
 {% endblock %}

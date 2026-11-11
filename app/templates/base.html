@@ -1,88 +1,296 @@
+
 <!doctype html>
 <html lang="en">
+
 <head>
+  <!-- Define the document encoding and responsive viewport settings. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>{% block title %}{{ app_name }}{% endblock %}</title>
-  <!-- Bootstrap 5 (responsive framework, scoped in the project plan) -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <!-- Bootstrap provides the responsive layout and standard interface components. -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <!-- Load the marketplace's custom styles after Bootstrap. -->
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/style.css') }}"
+  >
 </head>
+
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark site-header sticky-top">
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}">
-      <span class="brand-dot">◆</span> UoN <span class="text-success-emphasis">Student</span> Marketplace
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav"
-            aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="nav">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.browse') }}">Browse</a></li>
-        {% if session.get('user_id') %}
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('messages.inbox') }}">
-          Messages{% if unread_count %} <span class="badge rounded-pill bg-danger">{{ unread_count }}</span>{% endif %}
-        </a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('favourites.index') }}">Favourites</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('listings.my_listings') }}">My Listings</a></li>
-        {% endif %}
-        {% if session.get('user_id') and current_user and current_user['role'] == 'admin' %}
-        <li class="nav-item"><a class="nav-link text-warning fw-semibold" href="{{ url_for('admin.dashboard') }}">Admin</a></li>
-        {% endif %}
-      </ul>
-      <ul class="navbar-nav ms-auto align-items-lg-center">
-        {% if session.get('user_id') %}
-        <li class="nav-item me-2">
-          <a class="btn btn-success btn-sm px-3" href="{{ url_for('listings.create') }}">+ Post an Ad</a>
-        </li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-            {{ current_user['first_name'] }}
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">My Profile</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li>
-              <form method="post" action="{{ url_for('auth.logout') }}">
-                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-                <button class="dropdown-item" type="submit">Log out</button>
-              </form>
+
+  <!-- Main navigation shared across all marketplace pages. -->
+  <nav class="navbar navbar-expand-lg navbar-dark site-header sticky-top">
+    <div class="container-fluid">
+
+      <!-- Keep the existing UON Student Marketplace logo and home link unchanged. -->
+      <a
+        class="navbar-brand d-flex align-items-center"
+        href="{{ url_for('main.home') }}"
+      >
+        <img
+          src="{{ url_for('static', filename='img/uon_logo.png') }}"
+          alt="University of Newcastle"
+          class="uon-logo"
+        >
+      </a>
+
+      <!-- Toggle the navigation menu on smaller screens. -->
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#nav"
+        aria-controls="nav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="nav">
+
+        <!-- Primary navigation links available to marketplace users. -->
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('main.browse') }}">
+              Browse
+            </a>
+          </li>
+
+          {% if session.get('user_id') %}
+
+            <!-- Display messaging access and the user's unread message count. -->
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('messages.inbox') }}">
+                Messages
+                {% if unread_count %}
+                  <span class="badge rounded-pill bg-danger">
+                    {{ unread_count }}
+                  </span>
+                {% endif %}
+              </a>
             </li>
-          </ul>
-        </li>
-        {% else %}
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Log in</a></li>
-        <li class="nav-item">
-          <a class="btn btn-success btn-sm px-3" href="{{ url_for('auth.register') }}">Register</a>
-        </li>
-        {% endif %}
-      </ul>
-    </div>
-  </div>
-</nav>
 
-<main class="container py-4">
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% for category, message in messages %}
-      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <!-- Provide access to the user's saved marketplace listings. -->
+            <li class="nav-item">
+              <a
+  class="nav-link d-flex align-items-center gap-2"
+  href="{{ url_for('favourites.index') }}"
+>
+  Favourites
+  <img
+    src="{{ url_for('static', filename='img/favourite.png') }}"
+    alt=""
+    width="22"
+    height="22"
+    style="object-fit: contain;"
+  >
+</a>
+            </li>
+
+            <!-- Users can manage their own listings from this section. -->
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('listings.my_listings') }}">
+                My Listings
+              </a>
+            </li>
+
+            <!-- Show the appropriate support area based on the user's role. -->
+            {% if current_user and current_user['role'] == 'admin' %}
+              <li class="nav-item">
+                <a
+                  class="nav-link text-warning fw-semibold"
+                  href="{{ url_for('support.admin_tickets') }}"
+                >
+                  Support Management
+                </a>
+              </li>
+            {% else %}
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('support.tickets') }}">
+                  Support
+                </a>
+              </li>
+            {% endif %}
+
+          {% endif %}
+
+          <!-- Additional navigation options are available only to administrators. -->
+          {% if session.get('user_id') and current_user and current_user['role'] == 'admin' %}
+
+            <li class="nav-item">
+              <a
+                class="nav-link text-warning fw-semibold"
+                href="{{ url_for('admin.dashboard') }}"
+              >
+                Admin
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                href="{{ url_for('admin.categories') }}"
+              >
+                Categories
+              </a>
+            </li>
+
+          {% endif %}
+
+        </ul>
+
+        <!-- Account actions and authentication links appear on the right. -->
+        <ul class="navbar-nav ms-auto align-items-lg-center">
+
+          {% if session.get('user_id') and current_user %}
+
+            <!-- Allow authenticated users to create a new marketplace listing. -->
+            <li class="nav-item me-2">
+              <a
+                class="btn btn-success btn-sm px-3"
+                href="{{ url_for('listings.create') }}"
+              >
+                + Post an Ad
+              </a>
+            </li>
+
+            <!-- Profile dropdown contains account settings and logout. -->
+            <li class="nav-item dropdown">
+
+              <a
+                class="nav-link dropdown-toggle d-flex align-items-center gap-2"
+                href="#"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+
+                <!-- Display the uploaded profile photo or the user's initial. -->
+                {% if current_user['profile_photo'] %}
+                  <img
+                    src="{{ url_for('auth.profile_photo_file', filename=current_user['profile_photo']) }}"
+                    alt="Profile"
+                    class="rounded-circle"
+                    style="width: 32px; height: 32px; object-fit: cover;"
+                  >
+                {% else %}
+                  <span
+                    class="rounded-circle bg-light text-success d-inline-flex align-items-center justify-content-center"
+                    style="width: 32px; height: 32px; font-weight: 600;"
+                    aria-hidden="true"
+                  >
+                    {{ current_user['first_name'][0]|upper }}
+                  </span>
+                {% endif %}
+
+                <span>{{ current_user['first_name'] }}</span>
+              </a>
+
+              <ul class="dropdown-menu dropdown-menu-end">
+
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="{{ url_for('auth.profile') }}"
+                  >
+                    My Profile
+                  </a>
+                </li>
+
+                <li>
+                  <hr class="dropdown-divider">
+                </li>
+
+                <!-- Logout uses POST and CSRF protection rather than a GET link. -->
+                <li>
+                  <form method="post" action="{{ url_for('auth.logout') }}">
+                    <input
+                      type="hidden"
+                      name="_csrf"
+                      value="{{ csrf_token() }}"
+                    >
+
+                    <button class="dropdown-item" type="submit">
+                      Log out
+                    </button>
+                  </form>
+                </li>
+
+              </ul>
+            </li>
+
+          {% else %}
+
+            <!-- Visitors can log in or create a new student account. -->
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('auth.login') }}">
+                Log in
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a
+                class="btn btn-success btn-sm px-3"
+                href="{{ url_for('auth.register') }}"
+              >
+                Register
+              </a>
+            </li>
+
+          {% endif %}
+
+        </ul>
       </div>
-    {% endfor %}
-  {% endwith %}
-  {% block content %}{% endblock %}
-</main>
+    </div>
+  </nav>
 
-<footer class="site-footer mt-5 py-4">
-  <div class="container d-flex flex-wrap justify-content-between">
-    <span>UoN Student Marketplace — COMP6900 Group 7 prototype</span>
-    <span>Buy, sell and connect safely with UoN students</span>
-  </div>
-</footer>
+  <!-- Shared content area where individual page templates are rendered. -->
+  <main class="container py-4">
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <!-- Display feedback messages after form submissions and other actions. -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div
+          class="alert alert-{{ category }} alert-dismissible fade show"
+          role="alert"
+        >
+          {{ message }}
+
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="alert"
+            aria-label="Close"
+          ></button>
+        </div>
+      {% endfor %}
+    {% endwith %}
+
+    <!-- Child templates insert their page-specific content here. -->
+    {% block content %}{% endblock %}
+
+  </main>
+
+  <!-- Shared footer displayed across marketplace pages. -->
+  <footer class="site-footer mt-5 py-4">
+    <div class="container d-flex flex-wrap justify-content-between">
+      <span>UoN Student Marketplace — COMP6900 Group 7 prototype</span>
+      <span>Buy, sell and connect safely with UoN students</span>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JavaScript enables the responsive menu and dropdown interactions. -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Load shared marketplace JavaScript functionality. -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
 </body>
 </html>

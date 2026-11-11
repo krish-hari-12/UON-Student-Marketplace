@@ -35,15 +35,20 @@ def client(app):
     return app.test_client()
 
 
-# ----------------------------------------------------------------------
-# Helper functions exposed to tests via fixtures
-# ----------------------------------------------------------------------
+
 def _csrf_token(client, path="/login"):
     """Fetch a page and extract its CSRF token from the first form."""
     html = client.get(path).get_data(as_text=True)
-    match = re.search(r'name="_csrf" value="([^"]+)"', html)
+
+    # Allow spaces and line breaks between HTML input attributes.
+    match = re.search(
+        r'name="_csrf"\s+value="([^"]+)"',
+        html
+    )
+
     assert match, f"CSRF token not found on {path}"
     return match.group(1)
+
 
 
 @pytest.fixture()

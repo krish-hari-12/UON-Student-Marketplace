@@ -1,0 +1,31 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE settings
+.vscode/
+
+# Test and cache files
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Exclude only the generated test database
+database/test_uon_marketplace.db
+
+# Exclude private profile uploads
+uploads/profiles/
+
+# Log files
+*.log

@@ -1,77 +1,187 @@
+
 {% extends "base.html" %}
-{% block title %}Browse listings - {{ app_name }}{% endblock %}
+
+{% block title %}Browse Listings - {{ app_name }}{% endblock %}
+
 {% block content %}
-<h1 class="h3 mb-4">Browse listings <span class="text-muted fs-6">({{ total }} found)</span></h1>
+<h1 class="h3 mb-4">
+    Browse listings
+    <span class="text-muted fs-6">({{ total }} found)</span>
+</h1>
 
 <div class="row g-4">
-  <!-- Filter sidebar (FR-07) -->
-  <aside class="col-lg-3">
-    <form method="get" action="{{ url_for('main.browse') }}" class="card p-3 filter-card">
-      <input type="hidden" name="q" value="{{ q or '' }}">
-      <div class="mb-3">
-        <label class="form-label fw-semibold">Category</label>
-        <select name="category" class="form-select">
-          <option value="">All categories</option>
-          {% for cat in nav_categories %}
-          <option value="{{ cat.category_id }}" {% if category_id == cat.category_id %}selected{% endif %}>{{ cat.name }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="mb-3">
-        <label class="form-label fw-semibold">Price range ($)</label>
-        <div class="d-flex gap-2">
-          <input type="number" step="0.01" min="0" name="min_price" class="form-control" placeholder="Min" value="{{ min_price or '' }}">
-          <input type="number" step="0.01" min="0" name="max_price" class="form-control" placeholder="Max" value="{{ max_price or '' }}">
+    <aside class="col-lg-3">
+        <form
+            method="get"
+            action="{{ url_for('main.browse') }}"
+            class="card p-3 filter-card"
+        >
+            <input type="hidden" name="q" value="{{ q or '' }}">
+
+            <div class="mb-3">
+                <label for="filter-category" class="form-label fw-semibold">
+                    Category
+                </label>
+
+                <select
+                    id="filter-category"
+                    name="category"
+                    class="form-select"
+                >
+                    <option value="">All categories</option>
+
+                    {% for cat in nav_categories %}
+                        <option
+                            value="{{ cat.category_id }}"
+                            {% if category_id == cat.category_id %}selected{% endif %}
+                        >
+                            {{ cat.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Price range ($)</label>
+
+                <div class="d-flex gap-2">
+                    <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        name="min_price"
+                        class="form-control"
+                        placeholder="Min"
+                        aria-label="Minimum price"
+                        value="{{ min_price if min_price is not none else '' }}"
+                    >
+
+                    <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        name="max_price"
+                        class="form-control"
+                        placeholder="Max"
+                        aria-label="Maximum price"
+                        value="{{ max_price if max_price is not none else '' }}"
+                    >
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="filter-condition" class="form-label fw-semibold">
+                    Condition
+                </label>
+
+                <select
+                    id="filter-condition"
+                    name="condition"
+                    class="form-select"
+                >
+                    <option value="">Any condition</option>
+
+                    {% for c in ['New', 'Like new', 'Good', 'Fair', 'Needs repair'] %}
+                        <option value="{{ c }}" {% if condition == c %}selected{% endif %}>
+                            {{ c }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="filter-location" class="form-label fw-semibold">
+                    Location
+                </label>
+
+                <input
+                    type="text"
+                    id="filter-location"
+                    name="location"
+                    class="form-control"
+                    placeholder="e.g. Callaghan"
+                    value="{{ location or '' }}"
+                >
+            </div>
+
+            <div class="mb-3">
+                <label for="filter-sort" class="form-label fw-semibold">
+                    Sort by
+                </label>
+
+                <select
+                    id="filter-sort"
+                    name="sort"
+                    class="form-select"
+                >
+                    <option value="newest" {% if sort == 'newest' %}selected{% endif %}>
+                        Newest
+                    </option>
+                    <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>
+                        Oldest
+                    </option>
+                    <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>
+                        Price: low to high
+                    </option>
+                    <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>
+                        Price: high to low
+                    </option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-success w-100">
+                Apply filters
+            </button>
+
+            <a
+                class="btn btn-outline-secondary w-100 mt-2"
+                href="{{ url_for('main.browse') }}"
+            >
+                Reset
+            </a>
+        </form>
+    </aside>
+
+    <div class="col-lg-9">
+        <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-lg-3">
+            {% for l in listings %}
+                {% include "listings/_card.html" %}
+            {% else %}
+                <div class="col-12">
+                    <div class="alert alert-light border">
+                        No listings match your filters. Try clearing some filters.
+                    </div>
+                </div>
+            {% endfor %}
         </div>
-      </div>
-      <div class="mb-3">
-        <label class="form-label fw-semibold">Condition</label>
-        <select name="condition" class="form-select">
-          <option value="">Any condition</option>
-          {% for c in ['New','Like new','Good','Fair','Needs repair'] %}
-          <option value="{{ c }}" {% if condition == c %}selected{% endif %}>{{ c }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="mb-3">
-        <label class="form-label fw-semibold">Location</label>
-        <input type="text" name="location" class="form-control" placeholder="e.g. Callaghan" value="{{ location or '' }}">
-      </div>
-      <div class="mb-3">
-        <label class="form-label fw-semibold">Sort by</label>
-        <select name="sort" class="form-select">
-          <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest first</option>
-          <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest first</option>
-          <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: low to high</option>
-          <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: high to low</option>
-        </select>
-      </div>
-      <button class="btn btn-success w-100" type="submit">Apply filters</button>
-      <a class="btn btn-outline-secondary w-100 mt-2" href="{{ url_for('main.browse') }}">Reset</a>
-    </form>
-  </aside>
 
-  <!-- Results grid -->
-  <div class="col-lg-9">
-    <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-lg-3">
-      {% for l in listings %}
-        {% include "listings/_card.html" %}
-      {% else %}
-        <div class="col-12"><div class="alert alert-light border">No listings match your filters. Try clearing some filters.</div></div>
-      {% endfor %}
+        {% if pages > 1 %}
+            <nav class="mt-4" aria-label="Listing pages">
+                <ul class="pagination justify-content-center">
+                    {% for p in range(1, pages + 1) %}
+                        <li class="page-item {% if p == page %}active{% endif %}">
+                            <a
+                                class="page-link"
+                                href="{{ url_for(
+                                    'main.browse',
+                                    q=q or none,
+                                    category=category_id or none,
+                                    min_price=min_price if min_price is not none else none,
+                                    max_price=max_price if max_price is not none else none,
+                                    condition=condition or none,
+                                    location=location or none,
+                                    sort=sort,
+                                    page=p
+                                ) }}"
+                                {% if p == page %}aria-current="page"{% endif %}
+                            >
+                                {{ p }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </nav>
+        {% endif %}
     </div>
-
-    {% if pages > 1 %}
-    <nav class="mt-4" aria-label="Listing pages">
-      <ul class="pagination justify-content-center">
-        {% for p in range(1, pages + 1) %}
-        <li class="page-item {% if p == page %}active{% endif %}">
-          <a class="page-link" href="{{ url_for('main.browse', q=q or none, category=category_id or none, min_price=min_price or none, max_price=max_price or none, condition=condition or none, location=location or none, sort=sort, page=p) }}">{{ p }}</a>
-        </li>
-        {% endfor %}
-      </ul>
-    </nav>
-    {% endif %}
-  </div>
 </div>
 {% endblock %}

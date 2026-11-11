@@ -1,0 +1,104 @@
+
+{% extends "base.html" %}
+
+{% block title %}Support Management - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- Page heading and a short explanation of the support management area. -->
+  <div class="mb-4">
+    <h1 class="h3 mb-1">Customer Support Management</h1>
+    <p class="text-muted mb-0">
+      View and manage student support requests.
+    </p>
+  </div>
+
+  {% if tickets %}
+
+    <!-- Display submitted support requests in a responsive table. -->
+    <div class="card">
+      <div class="table-responsive">
+
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Ticket ID</th>
+              <th scope="col">Student</th>
+              <th scope="col">Subject</th>
+              <th scope="col">Category</th>
+              <th scope="col">Status</th>
+              <th scope="col">Submitted</th>
+              <th scope="col">Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for ticket in tickets %}
+              <tr>
+                <!-- Unique reference used to identify each support request. -->
+                <td>#{{ ticket.ticket_id }}</td>
+
+                <!-- Show the student's name and registered email address. -->
+                <td>
+                  <strong>
+                    {{ ticket.first_name }} {{ ticket.last_name }}
+                  </strong>
+                  <br>
+                  <small class="text-muted">
+                    {{ ticket.email }}
+                  </small>
+                </td>
+
+                <td>{{ ticket.subject }}</td>
+                <td>{{ ticket.category }}</td>
+
+                <!-- Use a different badge to make each ticket status easy to recognise. -->
+                <td>
+                  {% if ticket.status == 'open' %}
+                    <span class="badge bg-primary">Open</span>
+                  {% elif ticket.status == 'in_progress' %}
+                    <span class="badge bg-warning text-dark">In Progress</span>
+                  {% elif ticket.status == 'resolved' %}
+                    <span class="badge bg-success">Resolved</span>
+                  {% else %}
+                    <span class="badge bg-secondary">
+                      {{ ticket.status|replace('_', ' ')|title }}
+                    </span>
+                  {% endif %}
+                </td>
+
+                <td>{{ ticket.created_at }}</td>
+
+                <!-- Open the selected ticket to review its details and respond. -->
+                <td>
+                  <a
+                    href="{{ url_for('support.admin_ticket_detail', ticket_id=ticket.ticket_id) }}"
+                    class="btn btn-sm btn-outline-success"
+                    aria-label="View support ticket #{{ ticket.ticket_id }}"
+                  >
+                    View
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+      </div>
+    </div>
+
+  {% else %}
+
+    <!-- Empty state shown when no students have submitted support requests. -->
+    <div class="card p-5 text-center">
+      <h5>No support tickets available</h5>
+      <p class="text-muted mb-0">
+        Student support requests will appear here.
+      </p>
+    </div>
+
+  {% endif %}
+
+</div>
+{% endblock %}

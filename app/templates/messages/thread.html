@@ -1,42 +1,89 @@
+
 {% extends "base.html" %}
+
 {% block title %}Conversation - {{ app_name }}{% endblock %}
+
 {% block content %}
+
+{# Provide navigation back to the conversation inbox. #}
 <nav aria-label="breadcrumb">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{{ url_for('messages.inbox') }}">Messages</a></li>
-    <li class="breadcrumb-item active">{{ conversation.listing_title|truncate(40) }}</li>
-  </ol>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('messages.inbox') }}">Messages</a>
+        </li>
+
+        <li class="breadcrumb-item active" aria-current="page">
+            {{ conversation.listing_title|truncate(40) }}
+        </li>
+    </ol>
 </nav>
 
 <div class="card p-4" style="max-width: 860px;">
-  <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
-    <div>
-      <h1 class="h5 mb-0">{{ conversation.listing_title }}</h1>
-      <span class="text-muted small">Buyer: {{ conversation.buyer_name }} ·
-        You are the {{ 'seller' if conversation.seller_id == session.get('user_id') else 'buyer' }}</span>
-    </div>
-    <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('listings.detail', listing_id=conversation.listing_id) }}">View listing</a>
-  </div>
 
-  <div class="message-thread mb-3">
-    {% for m in messages %}
-    <div class="message-row {{ 'mine' if m.sender_id == session.get('user_id') else 'theirs' }}">
-      <div class="bubble">
-        <div class="small fw-semibold">{{ m.sender_name }}</div>
-        <div style="white-space: pre-line;">{{ m.body }}</div>
-        <div class="text-end small text-muted">{{ m.sent_at }}</div>
-      </div>
-    </div>
-    {% else %}
-    <p class="text-muted">No messages yet — say hello! 👋</p>
-    {% endfor %}
-  </div>
+    {# Display the listing and identify the current user's role in the conversation. #}
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+        <div>
+            <h1 class="h5 mb-0">{{ conversation.listing_title }}</h1>
 
-  <form method="post" class="d-flex gap-2">
-    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-    <textarea name="body" class="form-control" rows="2" maxlength="2000" required
-              placeholder="Write a message… (max 2000 characters)"></textarea>
-    <button class="btn btn-success px-4" type="submit">Send</button>
-  </form>
+            <span class="text-muted small">
+                Buyer: {{ conversation.buyer_name }} ·
+                You are the {{ 'seller' if conversation.seller_id == session.get('user_id') else 'buyer' }}
+            </span>
+        </div>
+
+        <a
+            class="btn btn-sm btn-outline-secondary"
+            href="{{ url_for('listings.detail', listing_id=conversation.listing_id) }}"
+        >
+            View listing
+        </a>
+    </div>
+
+    {# Display the conversation history with different alignment for each participant. #}
+    <div class="message-thread mb-3">
+        {% for m in messages %}
+            <div class="message-row {{ 'mine' if m.sender_id == session.get('user_id') else 'theirs' }}">
+                <div class="bubble">
+                    <div class="small fw-semibold">
+                        {{ m.sender_name }}
+                    </div>
+
+                    <div style="white-space: pre-line;">{{ m.body }}</div>
+
+                    <div class="text-end small text-muted">
+                        {{ m.sent_at }}
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <p class="text-muted">
+                No messages yet — say hello! 👋
+            </p>
+        {% endfor %}
+    </div>
+
+    {# Allow conversation participants to send a reply. #}
+    <form method="post" class="d-flex gap-2">
+        <input
+            type="hidden"
+            name="_csrf"
+            value="{{ csrf_token() }}"
+        >
+
+        <textarea
+            name="body"
+            class="form-control"
+            rows="2"
+            maxlength="2000"
+            required
+            placeholder="Write a message… (max 2000 characters)"
+            aria-label="Write a message"
+        ></textarea>
+
+        <button class="btn btn-success px-4" type="submit">
+            Send
+        </button>
+    </form>
 </div>
+
 {% endblock %}

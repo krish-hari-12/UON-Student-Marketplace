@@ -1,107 +1,417 @@
+
 {% extends "base.html" %}
+
 {% block title %}{{ listing.title }} - {{ app_name }}{% endblock %}
+
 {% block content %}
+
+{# Build one media collection so photos and videos appear in the same carousel. #}
+{% set media_items = [] %}
+
+{% for img in images %}
+    {% set _ = media_items.append({
+        'type': 'image',
+        'file_path': img.file_path
+    }) %}
+{% endfor %}
+
+{% for video in videos %}
+    {% set _ = media_items.append({
+        'type': 'video',
+        'file_path': video.file_path
+    }) %}
+{% endfor %}
+
+<style>
+    /* Keep the gallery contained within its card. */
+    .product-gallery {
+        position: relative;
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid #dee2e6 !important;
+        border-radius: 12px;
+    }
+
+    /* Display photos and videos at the same size without cropping them. */
+    .product-gallery .detail-img,
+    .product-gallery .detail-video {
+        display: block;
+        width: 100%;
+        height: 520px;
+        object-fit: contain;
+        background: #ffffff;
+    }
+
+    /* Position circular controls on either side of the gallery. */
+    .product-gallery .gallery-arrow {
+        top: 50%;
+        bottom: auto;
+        width: 64px;
+        height: 64px;
+        transform: translateY(-50%);
+        background: rgba(30, 45, 65, 0.72);
+        border-radius: 50%;
+        opacity: 1;
+        margin: 0 35px;
+    }
+
+    .product-gallery .gallery-arrow:hover {
+        background: rgba(30, 45, 65, 0.95);
+    }
+
+    /* Show the current media position in the top-right corner. */
+    .product-gallery .gallery-counter {
+        position: absolute;
+        top: 18px;
+        right: 18px;
+        z-index: 5;
+        background: rgba(30, 45, 65, 0.85);
+        color: #ffffff;
+        padding: 9px 16px;
+        border-radius: 25px;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    /* Style the navigation indicators below the gallery. */
+    .product-gallery .gallery-dots {
+        margin-bottom: 15px;
+        align-items: center;
+    }
+
+    .product-gallery .gallery-dots button {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 0;
+        margin: 0 5px;
+        background-color: #adb5bd;
+        opacity: 1;
+    }
+
+    .product-gallery .gallery-dots button.active {
+        background-color: #198754;
+    }
+
+    /* Reduce media and navigation sizes on smaller screens. */
+    @media (max-width: 768px) {
+        .product-gallery .detail-img,
+        .product-gallery .detail-video {
+            height: 320px;
+        }
+
+        .product-gallery .gallery-arrow {
+            width: 46px;
+            height: 46px;
+            margin: 0 10px;
+        }
+
+        .product-gallery .gallery-counter {
+            top: 12px;
+            right: 12px;
+            padding: 7px 12px;
+        }
+    }
+</style>
+
+{# Provide navigation back to browsing and the listing's category. #}
 <nav aria-label="breadcrumb">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{{ url_for('main.browse') }}">Listings</a></li>
-    <li class="breadcrumb-item"><a href="{{ url_for('main.browse', category=listing.category_id) }}">{{ listing.category_name }}</a></li>
-    <li class="breadcrumb-item active">{{ listing.title|truncate(40) }}</li>
-  </ol>
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('main.browse') }}">Listings</a>
+        </li>
+
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('main.browse', category=listing.category_id) }}">
+                {{ listing.category_name }}
+            </a>
+        </li>
+
+        <li class="breadcrumb-item active" aria-current="page">
+            {{ listing.title|truncate(40) }}
+        </li>
+    </ol>
 </nav>
 
 <div class="row g-4">
-  <!-- Image gallery (FR-05) -->
-  <div class="col-lg-7">
-    <div id="gallery" class="carousel slide rounded-3 overflow-hidden border" data-bs-ride="false">
-      <div class="carousel-inner">
-        {% for img in images %}
-        <div class="carousel-item {% if loop.first %}active{% endif %}">
-          <img class="d-block w-100 detail-img" src="{{ url_for('main.uploaded_file', filename=img.file_path) }}" alt="Photo {{ loop.index }} of {{ listing.title }}">
+
+    {# Display listing photos and videos in one navigable carousel. #}
+    <div class="col-lg-7">
+        <div
+            id="gallery"
+            class="carousel slide product-gallery overflow-hidden"
+            data-bs-ride="false"
+        >
+            <div class="carousel-inner">
+                {% for item in media_items %}
+                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                        {% if item.type == 'image' %}
+                            <img
+                                src="{{ url_for('main.uploaded_file', filename=item.file_path) }}"
+                                class="detail-img"
+                                alt="{{ listing.title }} - Photo {{ loop.index }}"
+                            >
+                        {% elif item.type == 'video' %}
+                            <video
+                                controls
+                                playsinline
+                                preload="metadata"
+                                class="detail-video"
+                            >
+                                <source src="{{ url_for('main.uploaded_file', filename=item.file_path) }}">
+                                Your browser does not support video playback.
+                            </video>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    {# Show a placeholder when the listing has no uploaded media. #}
+                    <div class="carousel-item active">
+                        <div class="img-placeholder detail-img d-flex align-items-center justify-content-center">
+                            📦
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            {# Show navigation controls only when multiple media items exist. #}
+            {% if media_items|length > 1 %}
+                <button
+                    class="carousel-control-prev gallery-arrow"
+                    type="button"
+                    data-bs-target="#gallery"
+                    data-bs-slide="prev"
+                    aria-label="Previous media"
+                >
+                    <span class="carousel-control-prev-icon"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+
+                <button
+                    class="carousel-control-next gallery-arrow"
+                    type="button"
+                    data-bs-target="#gallery"
+                    data-bs-slide="next"
+                    aria-label="Next media"
+                >
+                    <span class="carousel-control-next-icon"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+
+                <div class="carousel-indicators gallery-dots">
+                    {% for item in media_items %}
+                        <button
+                            type="button"
+                            data-bs-target="#gallery"
+                            data-bs-slide-to="{{ loop.index0 }}"
+                            class="{% if loop.first %}active{% endif %}"
+                            {% if loop.first %}aria-current="true"{% endif %}
+                            aria-label="Slide {{ loop.index }}"
+                        ></button>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {# Keep the displayed media count in sync with the carousel. #}
+            {% if media_items %}
+                <div class="gallery-counter">
+                    <span id="currentMedia">1</span> / {{ media_items|length }}
+                </div>
+            {% endif %}
         </div>
-        {% else %}
-        <div class="carousel-item active">
-          <div class="img-placeholder detail-img d-flex align-items-center justify-content-center">📦</div>
+    </div>
+
+    {# Display the listing information and available buyer actions. #}
+    <div class="col-lg-5">
+        <div class="card p-4 h-100">
+
+            {% if listing.status != 'active' %}
+                <span class="badge bg-secondary align-self-start mb-2">
+                    This listing is {{ listing.status }}
+                </span>
+            {% endif %}
+
+            <h1 class="h4">{{ listing.title }}</h1>
+
+            <div class="text-success fs-3 fw-bold mb-3">
+                ${{ '%.2f'|format(listing.price) }}
+            </div>
+
+            <ul class="list-group list-group-flush mb-3">
+                <li class="list-group-item d-flex justify-content-between">
+                    <span class="text-muted">Category</span>
+                    <span>{{ listing.category_name }}</span>
+                </li>
+
+                <li class="list-group-item d-flex justify-content-between">
+                    <span class="text-muted">Condition</span>
+                    <span>{{ listing.condition }}</span>
+                </li>
+
+                <li class="list-group-item d-flex justify-content-between">
+                    <span class="text-muted">Location</span>
+                    <span>{{ listing.location or 'Not specified' }}</span>
+                </li>
+
+                <li class="list-group-item d-flex justify-content-between">
+                    <span class="text-muted">Posted</span>
+                    <span>{{ listing.created_at[:10] }}</span>
+                </li>
+
+                <li class="list-group-item d-flex justify-content-between">
+                    <span class="text-muted">Seller</span>
+                    <span>
+                        {{ listing.seller_first_name }}
+                        (member since {{ listing.seller_since[:10] }})
+                    </span>
+                </li>
+            </ul>
+
+            <div class="d-grid gap-2">
+
+                {# Allow eligible buyers to start a conversation with the seller. #}
+                {% if can_contact %}
+                    <form
+                        method="post"
+                        action="{{ url_for('messages.start_conversation', listing_id=listing.listing_id) }}"
+                    >
+                        <input
+                            type="hidden"
+                            name="_csrf"
+                            value="{{ csrf_token() }}"
+                        >
+
+                        <button class="btn btn-success btn-lg w-100" type="submit">
+                            💬 Contact seller
+                        </button>
+                    </form>
+                {% elif not session.get('user_id') %}
+                    <a
+                        class="btn btn-outline-success btn-lg"
+                        href="{{ url_for('auth.login', next=request.path) }}"
+                    >
+                        Log in to contact the seller
+                    </a>
+                {% endif %}
+
+                {# Allow signed-in users to save or remove this listing from favourites. #}
+                {% if session.get('user_id') %}
+                    <form
+                        method="post"
+                        action="{{ url_for('favourites.toggle', listing_id=listing.listing_id) }}"
+                    >
+                        <input
+                            type="hidden"
+                            name="_csrf"
+                            value="{{ csrf_token() }}"
+                        >
+
+                        <input
+                            type="hidden"
+                            name="next"
+                            value="{{ request.path }}"
+                        >
+
+                        <button class="btn btn-outline-primary w-100" type="submit">
+                            {% if already_saved %}
+                                ★ Remove from favourites
+                            {% else %}
+                                ☆ Save to favourites
+                            {% endif %}
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
         </div>
-        {% endfor %}
-      </div>
-      {% if images|length > 1 %}
-      <button class="carousel-control-prev" type="button" data-bs-target="#gallery" data-bs-slide="prev">
-        <span class="carousel-control-prev-icon"></span><span class="visually-hidden">Previous</span>
-      </button>
-      <button class="carousel-control-next" type="button" data-bs-target="#gallery" data-bs-slide="next">
-        <span class="carousel-control-next-icon"></span><span class="visually-hidden">Next</span>
-      </button>
-      {% endif %}
     </div>
-  </div>
-
-  <!-- Summary + actions -->
-  <div class="col-lg-5">
-    <div class="card p-4 h-100">
-      {% if listing.status != 'active' %}
-        <span class="badge bg-secondary align-self-start mb-2">This listing is {{ listing.status }}</span>
-      {% endif %}
-      <h1 class="h4">{{ listing.title }}</h1>
-      <div class="text-success fs-3 fw-bold mb-3">${{ '%.2f'|format(listing.price) }}</div>
-      <ul class="list-group list-group-flush mb-3">
-        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Category</span><span>{{ listing.category_name }}</span></li>
-        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Condition</span><span>{{ listing.condition }}</span></li>
-        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Location</span><span>{{ listing.location or 'Not specified' }}</span></li>
-        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Posted</span><span>{{ listing.created_at[:10] }}</span></li>
-        <li class="list-group-item d-flex justify-content-between"><span class="text-muted">Seller</span><span>{{ listing.seller_first_name }} (member since {{ listing.seller_since[:10] }})</span></li>
-      </ul>
-
-      <div class="d-grid gap-2">
-        {% if can_contact %}
-        <form method="post" action="{{ url_for('messages.start_conversation', listing_id=listing.listing_id) }}">
-          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-          <button class="btn btn-success btn-lg w-100" type="submit">💬 Contact seller</button>
-        </form>
-        {% elif not session.get('user_id') %}
-          <a class="btn btn-outline-success btn-lg" href="{{ url_for('auth.login', next=request.path) }}">Log in to contact the seller</a>
-        {% endif %}
-
-        {% if session.get('user_id') %}
-        <form method="post" action="{{ url_for('favourites.toggle', listing_id=listing.listing_id) }}">
-          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-          <input type="hidden" name="next" value="{{ request.path }}">
-          <button class="btn btn-outline-primary w-100" type="submit">
-            {% if already_saved %}★ Remove from favourites{% else %}☆ Save to favourites{% endif %}
-          </button>
-        </form>
-        {% endif %}
-      </div>
-    </div>
-  </div>
 </div>
 
-<!-- Description -->
+{# Show the full description while preserving the seller's line breaks. #}
 <div class="card mt-4 p-4">
-  <h2 class="h5">Description</h2>
-  <p class="mb-0" style="white-space: pre-line;">{{ listing.description }}</p>
+    <h2 class="h5">Description</h2>
+    <p class="mb-0" style="white-space: pre-line;">{{ listing.description }}</p>
 </div>
 
-<!-- Report (FR-11, BR-06) -->
+{# Let signed-in users report listings belonging to other members. #}
 <div class="card mt-3 p-3 d-flex flex-row align-items-center justify-content-between">
-  <span class="text-muted small">Seen something inappropriate or suspicious about this listing?</span>
-  {% if session.get('user_id') and current_user['user_id'] != listing.user_id %}
-    <a class="btn btn-outline-danger btn-sm" href="{{ url_for('reports.report_listing', listing_id=listing.listing_id) }}">⚑ Report this listing</a>
-  {% endif %}
+    <span class="text-muted small">
+        Seen something inappropriate or suspicious about this listing?
+    </span>
+
+    {% if session.get('user_id') and current_user['user_id'] != listing.user_id %}
+        <a
+            class="btn btn-outline-danger btn-sm"
+            href="{{ url_for('reports.report_listing', listing_id=listing.listing_id) }}"
+        >
+            ⚑ Report this listing
+        </a>
+    {% endif %}
 </div>
 
-<!-- Owner tools (BR-02) -->
+{# Only the listing owner can access listing management actions. #}
 {% if session.get('user_id') and current_user['user_id'] == listing.user_id %}
-<div class="card mt-3 p-3">
-  <h2 class="h6">Owner tools</h2>
-  <div class="d-flex gap-2 flex-wrap">
-    <a class="btn btn-outline-primary btn-sm" href="{{ url_for('listings.edit', listing_id=listing.listing_id) }}">Edit</a>
-    <form method="post" action="{{ url_for('listings.set_status', listing_id=listing.listing_id) }}">
-      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-      <input type="hidden" name="next" value="{{ request.path }}">
-      <input type="hidden" name="status" value="{{ 'active' if listing.status == 'archived' else 'archived' }}">
-      <button class="btn btn-outline-secondary btn-sm" type="submit">{{ 'Re-activate' if listing.status == 'archived' else 'Archive' }}</button>
-    </form>
-  </div>
-</div>
+    <div class="card mt-3 p-3">
+        <h2 class="h6">Owner tools</h2>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <a
+                class="btn btn-outline-primary btn-sm"
+                href="{{ url_for('listings.edit', listing_id=listing.listing_id) }}"
+            >
+                Edit
+            </a>
+
+            {# Archive an active listing or reactivate an archived listing. #}
+            <form
+                method="post"
+                action="{{ url_for('listings.set_status', listing_id=listing.listing_id) }}"
+            >
+                <input
+                    type="hidden"
+                    name="_csrf"
+                    value="{{ csrf_token() }}"
+                >
+
+                <input
+                    type="hidden"
+                    name="next"
+                    value="{{ request.path }}"
+                >
+
+                <input
+                    type="hidden"
+                    name="status"
+                    value="{{ 'active' if listing.status == 'archived' else 'archived' }}"
+                >
+
+                <button class="btn btn-outline-secondary btn-sm" type="submit">
+                    {{ 'Re-activate' if listing.status == 'archived' else 'Archive' }}
+                </button>
+            </form>
+        </div>
+    </div>
 {% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const gallery = document.getElementById("gallery");
+    const counter = document.getElementById("currentMedia");
+
+    if (!gallery) return;
+
+    // Stop any playing video before the carousel changes slides.
+    gallery.addEventListener("slide.bs.carousel", () => {
+        gallery.querySelectorAll("video").forEach((video) => {
+            video.pause();
+        });
+    });
+
+    // Update the counter after the next slide becomes active.
+    gallery.addEventListener("slid.bs.carousel", (event) => {
+        if (counter) {
+            counter.textContent = event.to + 1;
+        }
+    });
+});
+</script>
+
 {% endblock %}

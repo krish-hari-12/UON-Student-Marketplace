@@ -1,34 +1,108 @@
+
 {% extends "base.html" %}
-{% block title %}Report listing - {{ app_name }}{% endblock %}
+
+{% block title %}Report Listing - {{ app_name }}{% endblock %}
+
 {% block content %}
+
+<!-- Centre the report form and keep it readable on different screen sizes. -->
 <div class="row justify-content-center">
   <div class="col-md-7 col-lg-6">
+
     <div class="card p-4">
-      <h1 class="h5">Report a listing</h1>
-      <p class="text-muted small">You are reporting: <strong>{{ listing.title }}</strong>.
-        Reports are reviewed by marketplace administrators (your report stays confidential).</p>
-      <form method="post" action="{{ url_for('reports.report_listing', listing_id=listing.listing_id) }}">
-        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+      <h1 class="h5">Report a Listing</h1>
+
+      <!-- Explain which listing is being reported and how reports are handled. -->
+      <p class="text-muted small">
+        You are reporting:
+        <strong>{{ listing.title }}</strong>.
+        Reports are reviewed by marketplace administrators
+        (your report stays confidential).
+      </p>
+
+      <!-- Submit the report to the listing-specific reporting route. -->
+      <form
+        method="post"
+        action="{{ url_for('reports.report_listing', listing_id=listing.listing_id) }}"
+      >
+
+        <!-- Protect the report submission against cross-site request forgery. -->
+        <input
+          type="hidden"
+          name="_csrf"
+          value="{{ csrf_token() }}"
+        >
+
+        <!-- Let the student select the reason that best describes the issue. -->
         <div class="mb-3">
-          <label class="form-label">Reason *</label>
-          <select name="reason" class="form-select" required>
+          <label for="reason" class="form-label">
+            Reason *
+          </label>
+
+          <select
+            id="reason"
+            name="reason"
+            class="form-select"
+            required
+          >
             <option value="">Choose a reason…</option>
+
             {% for r in reasons %}
-            <option value="{{ r }}" {% if form.reason == r %}selected{% endif %}>{{ r }}</option>
+              <option
+                value="{{ r }}"
+                {% if form.reason == r %}selected{% endif %}
+              >
+                {{ r }}
+              </option>
             {% endfor %}
           </select>
-          <div class="text-danger small">{{ errors.reason }}</div>
+
+          <!-- Display validation feedback if the selected reason is invalid. -->
+          <div class="text-danger small">
+            {{ errors.reason }}
+          </div>
         </div>
+
+        <!-- Collect details explaining why the listing should be reviewed. -->
         <div class="mb-3">
-          <label class="form-label">Details * <span class="text-muted">(at least 10 characters)</span></label>
-          <textarea name="details" class="form-control" rows="4" required
-                    placeholder="Tell us what is wrong with this listing…">{{ form.details or '' }}</textarea>
-          <div class="text-danger small">{{ errors.details }}</div>
+          <label for="details" class="form-label">
+            Details *
+            <span class="text-muted">(at least 10 characters)</span>
+          </label>
+
+          <textarea
+            id="details"
+            name="details"
+            class="form-control"
+            rows="4"
+            minlength="10"
+            maxlength="3000"
+            required
+            placeholder="Tell us what is wrong with this listing…"
+          >{{ form.details or '' }}</textarea>
+
+          <!-- Preserve the entered details and show validation feedback after submission. -->
+          <div class="text-danger small">
+            {{ errors.details }}
+          </div>
         </div>
-        <button class="btn btn-danger" type="submit">Submit report</button>
-        <a class="btn btn-outline-secondary" href="{{ url_for('listings.detail', listing_id=listing.listing_id) }}">Cancel</a>
+
+        <!-- Submit the report or return to the original listing without reporting it. -->
+        <button class="btn btn-danger" type="submit">
+          Submit Report
+        </button>
+
+        <a
+          class="btn btn-outline-secondary"
+          href="{{ url_for('listings.detail', listing_id=listing.listing_id) }}"
+        >
+          Cancel
+        </a>
+
       </form>
     </div>
   </div>
 </div>
+
 {% endblock %}

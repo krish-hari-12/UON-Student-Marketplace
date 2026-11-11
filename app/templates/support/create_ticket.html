@@ -1,0 +1,111 @@
+
+{% extends "base.html" %}
+
+{% block title %}Create Support Ticket - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-7">
+
+    <div class="card p-4">
+
+      <!-- Introduce the support form and explain what students can use it for. -->
+      <h1 class="h4 mb-2 text-center">Contact Support</h1>
+
+      <p class="text-muted text-center mb-4">
+        Need help? Submit a support request and our team will assist you.
+      </p>
+
+      <!-- Submit a new support request to the support blueprint. -->
+      <form
+        method="post"
+        action="{{ url_for('support.create_ticket') }}"
+      >
+
+        <!-- Protect the form submission against cross-site request forgery. -->
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+        <!-- Students select the category that best describes their issue. -->
+        <div class="mb-3">
+          <label for="category" class="form-label">
+            Support Category
+          </label>
+
+          <select
+            id="category"
+            name="category"
+            class="form-select"
+            required
+          >
+            <option value="">Select a category</option>
+            <option value="Account">Account</option>
+            <option value="Login">Login</option>
+            <option value="Listings">Listings</option>
+            <option value="Messages">Messages</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <!-- Keep the subject short so support staff can identify the issue quickly. -->
+        <div class="mb-3">
+          <label for="subject" class="form-label">
+            Subject
+          </label>
+
+          <input
+            type="text"
+            id="subject"
+            name="subject"
+            class="form-control"
+            placeholder="Briefly describe your issue"
+            minlength="5"
+            maxlength="120"
+            required
+          >
+        </div>
+
+        <!-- Collect enough detail for the support team to investigate the request. -->
+        <div class="mb-4">
+          <label for="description" class="form-label">
+            Description
+          </label>
+
+          <textarea
+            id="description"
+            name="description"
+            class="form-control"
+            rows="6"
+            minlength="10"
+            maxlength="3000"
+            placeholder="Explain your issue in detail..."
+            required
+          ></textarea>
+
+          <div class="form-text">
+            Please provide enough information to help us understand your issue.
+          </div>
+        </div>
+
+        <!-- Send the completed support request. -->
+        <button type="submit" class="btn btn-success w-100">
+          Submit Support Ticket
+        </button>
+
+      </form>
+
+      <hr>
+
+      <!-- Provide a direct link to the student's existing support requests. -->
+      <p class="text-center mb-0">
+        <a
+          href="{{ url_for('support.tickets') }}"
+          class="text-decoration-none"
+        >
+          View My Support Tickets
+        </a>
+      </p>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

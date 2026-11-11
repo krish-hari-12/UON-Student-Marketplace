@@ -1,0 +1,57 @@
+
+{% extends "base.html" %}
+
+{% block title %}Edit Category - Admin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">Edit category</h1>
+
+            <a href="{{ url_for('admin.categories') }}" class="btn btn-outline-secondary btn-sm">
+                Back
+            </a>
+        </div>
+
+        <div class="card p-4">
+            <form method="post">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+
+                <div class="mb-3">
+                    <label for="category-name" class="form-label">Category name *</label>
+                    <input
+                        type="text"
+                        id="category-name"
+                        name="name"
+                        class="form-control"
+                        value="{{ request.form.get('name', category.name) }}"
+                        required
+                        minlength="2"
+                        maxlength="50"
+                    >
+                </div>
+
+                <div class="mb-3">
+                    <label for="category-description" class="form-label">Description</label>
+                    <textarea
+                        id="category-description"
+                        name="description"
+                        class="form-control"
+                        rows="4"
+                        maxlength="200"
+                    >{{ request.form.get('description', category.description or '') }}</textarea>
+                </div>
+
+                <button type="submit" class="btn btn-success">
+                    Save changes
+                </button>
+
+                <a href="{{ url_for('admin.categories') }}" class="btn btn-outline-secondary">
+                    Cancel
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

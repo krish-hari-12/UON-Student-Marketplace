@@ -1,0 +1,107 @@
+
+{% extends "base.html" %}
+
+{% block title %}My Support Tickets - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+  <!-- Page heading and shortcut for submitting a new support request. -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3 mb-1">My Support Tickets</h1>
+      <p class="text-muted mb-0">
+        View and track your support requests.
+      </p>
+    </div>
+
+    <a
+      href="{{ url_for('support.create_ticket') }}"
+      class="btn btn-success"
+    >
+      + Create New Ticket
+    </a>
+  </div>
+
+  {% if tickets %}
+
+    <!-- Display the student's submitted tickets in a responsive table. -->
+    <div class="card">
+      <div class="table-responsive">
+
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">Ticket ID</th>
+              <th scope="col">Subject</th>
+              <th scope="col">Category</th>
+              <th scope="col">Status</th>
+              <th scope="col">Created</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for ticket in tickets %}
+              <tr>
+                <!-- Display the unique reference for each support request. -->
+                <td>#{{ ticket.ticket_id }}</td>
+
+                <!-- Open the ticket conversation by selecting its subject. -->
+                <td>
+                  <a
+                    href="{{ url_for('support.ticket_detail', ticket_id=ticket.ticket_id) }}"
+                    class="text-decoration-none fw-semibold"
+                    aria-label="View support ticket: {{ ticket.subject }}"
+                  >
+                    {{ ticket.subject }}
+                  </a>
+                </td>
+
+                <td>{{ ticket.category }}</td>
+
+                <!-- Use status badges to show the progress of each request. -->
+                <td>
+                  {% if ticket.status == 'open' %}
+                    <span class="badge bg-primary">Open</span>
+                  {% elif ticket.status == 'in_progress' %}
+                    <span class="badge bg-warning text-dark">In Progress</span>
+                  {% elif ticket.status == 'resolved' %}
+                    <span class="badge bg-success">Resolved</span>
+                  {% else %}
+                    <span class="badge bg-secondary">
+                      {{ ticket.status|replace('_', ' ')|title }}
+                    </span>
+                  {% endif %}
+                </td>
+
+                <td>{{ ticket.created_at }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+      </div>
+    </div>
+
+  {% else %}
+
+    <!-- Encourage students to create their first ticket when none exist. -->
+    <div class="card p-5 text-center">
+      <h2 class="h5">No support tickets yet</h2>
+
+      <p class="text-muted">
+        You haven't submitted any support requests.
+      </p>
+
+      <a
+        href="{{ url_for('support.create_ticket') }}"
+        class="btn btn-success mx-auto"
+      >
+        Create Your First Ticket
+      </a>
+    </div>
+
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,27 +1,58 @@
-{# Reusable listing card used by home, browse and favourites pages #}
+
+{# Reusable listing card for home, browse and favourites pages. #}
 <div class="col">
-  <div class="card listing-card h-100">
-    <a href="{{ url_for('listings.detail', listing_id=l.listing_id) }}" class="stretched-link"></a>
-    <div class="card-img-wrap">
-      {% if l.image_path %}
-        <img class="card-img-top" src="{{ url_for('main.uploaded_file', filename=l.image_path) }}" alt="{{ l.title }}">
-      {% else %}
-        <div class="card-img-top img-placeholder d-flex align-items-center justify-content-center">📦</div>
-      {% endif %}
+    <div class="card listing-card h-100">
+        <a
+            href="{{ url_for('listings.detail', listing_id=l.listing_id) }}"
+            class="stretched-link"
+        ></a>
+
+        <div class="card-img-wrap">
+            {% if l.image_path %}
+                <img
+                    class="card-img-top"
+                    src="{{ url_for('main.uploaded_file', filename=l.image_path) }}"
+                    alt="{{ l.title }}"
+                >
+            {% else %}
+                <div class="card-img-top img-placeholder d-flex align-items-center justify-content-center">
+                    📦
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <span class="badge bg-light text-dark border">
+                    {{ l.category_name }}
+                </span>
+
+                {% if l.status and l.status != 'active' %}
+                    <span class="badge bg-secondary">
+                        {{ l.status }}
+                    </span>
+                {% endif %}
+            </div>
+
+            <h6 class="card-title mt-2 mb-1 text-truncate">
+                {{ l.title }}
+            </h6>
+
+            <div class="fw-bold text-success fs-5">
+                {% if l.price|float == 0 %}
+                    FREE
+                {% else %}
+                    ${{ '%.2f'|format(l.price|float) }}
+                {% endif %}
+            </div>
+
+            <div class="text-muted small mt-1">
+                <span>{{ l.condition }}</span>
+
+                {% if l.location %}
+                    · <span>{{ l.location }}</span>
+                {% endif %}
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-      <div class="d-flex justify-content-between align-items-start">
-        <span class="badge bg-light text-dark border">{{ l.category_name }}</span>
-        {% if l.status and l.status != 'active' %}
-          <span class="badge bg-secondary">{{ l.status }}</span>
-        {% endif %}
-      </div>
-      <h6 class="card-title mt-2 mb-1 text-truncate">{{ l.title }}</h6>
-      <div class="fw-bold text-success fs-5">${{ '%.2f'|format(l.price) }}</div>
-      <div class="text-muted small mt-1">
-        <span>{{ l.condition }}</span>
-        {% if l.location %} · <span>{{ l.location }}</span>{% endif %}
-      </div>
-    </div>
-  </div>
 </div>

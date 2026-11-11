@@ -1,0 +1,198 @@
+
+{% extends "base.html" %}
+
+{% block title %}Manage Ticket #{{ ticket.ticket_id }} - {{ app_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    {# Provide navigation back to the admin support dashboard. #}
+    <div class="mb-4">
+        <a
+            href="{{ url_for('support.admin_tickets') }}"
+            class="text-decoration-none"
+        >
+            &larr; Back to Support Dashboard
+        </a>
+    </div>
+
+    {# Display the student's original support request and account information. #}
+    <div class="card p-4 mb-4">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <h1 class="h4 mb-2">{{ ticket.subject }}</h1>
+
+                <p class="text-muted mb-0">
+                    Ticket #{{ ticket.ticket_id }} |
+                    Category: {{ ticket.category }}
+                </p>
+            </div>
+
+            {# Use a different badge to identify the current ticket status. #}
+            {% if ticket.status == 'open' %}
+                <span class="badge bg-primary">Open</span>
+            {% elif ticket.status == 'in_progress' %}
+                <span class="badge bg-warning text-dark">In Progress</span>
+            {% elif ticket.status == 'resolved' %}
+                <span class="badge bg-success">Resolved</span>
+            {% endif %}
+        </div>
+
+        <hr>
+
+        <h2 class="h6">Student Information</h2>
+
+        <p class="mb-1">
+            <strong>Name:</strong>
+            {{ ticket.first_name }} {{ ticket.last_name }}
+        </p>
+
+        <p class="mb-3">
+            <strong>Email:</strong> {{ ticket.email }}
+        </p>
+
+        <h2 class="h6">Original Description</h2>
+
+        <p style="white-space: pre-wrap;">{{ ticket.description }}</p>
+
+        <small class="text-muted">
+            Submitted: {{ ticket.created_at }}
+        </small>
+    </div>
+
+    {# Allow administrators to update the ticket's current status. #}
+    <div class="card p-4 mb-4">
+        <h2 class="h5 mb-3">Update Ticket Status</h2>
+
+        <form
+            method="post"
+            action="{{ url_for('support.admin_ticket_detail', ticket_id=ticket.ticket_id) }}"
+        >
+            <input
+                type="hidden"
+                name="_csrf"
+                value="{{ csrf_token() }}"
+            >
+
+            <input type="hidden" name="action" value="status">
+
+            <div class="row align-items-end">
+                <div class="col-md-8 mb-3">
+                    <label for="status" class="form-label">
+                        Ticket Status
+                    </label>
+
+                    <select
+                        id="status"
+                        name="status"
+                        class="form-select"
+                        required
+                    >
+                        <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>
+                            Open
+                        </option>
+
+                        <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>
+                            In Progress
+                        </option>
+
+                        <option value="resolved" {% if ticket.status == 'resolved' %}selected{% endif %}>
+                            Resolved
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                    <button type="submit" class="btn btn-success w-100">
+                        Update Status
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {# Display the complete conversation between the student and administrators. #}
+    <div class="card p-4 mb-4">
+        <h2 class="h5 mb-3">Ticket Conversation</h2>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div
+                    class="border rounded p-3 mb-3 {% if message.sender_id == ticket.user_id %}bg-light{% else %}bg-success bg-opacity-10{% endif %}"
+                >
+                    <div class="d-flex justify-content-between flex-wrap mb-2">
+                        <strong>
+                            {% if message.sender_id == ticket.user_id %}
+                                {{ ticket.first_name }} {{ ticket.last_name }}
+                                <span class="badge bg-secondary">Student</span>
+                            {% else %}
+                                {{ message.first_name }} {{ message.last_name }}
+                                <span class="badge bg-success">Admin</span>
+                            {% endif %}
+                        </strong>
+
+                        <small class="text-muted">
+                            {{ message.sent_at }}
+                        </small>
+                    </div>
+
+                    <p class="mb-0" style="white-space: pre-wrap;">
+                        {{ message.body }}
+                    </p>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="text-muted mb-0">
+                No messages yet. You can send the first reply below.
+            </p>
+        {% endif %}
+    </div>
+
+    {# Allow administrators to reply while the ticket is unresolved. #}
+    {% if ticket.status != 'resolved' %}
+        <div class="card p-4">
+            <h2 class="h5 mb-3">Reply to Student</h2>
+
+            <form
+                method="post"
+                action="{{ url_for('support.admin_ticket_detail', ticket_id=ticket.ticket_id) }}"
+            >
+                <input
+                    type="hidden"
+                    name="_csrf"
+                    value="{{ csrf_token() }}"
+                >
+
+                <input type="hidden" name="action" value="reply">
+
+                <div class="mb-3">
+                    <label for="body" class="form-label">
+                        Your Reply
+                    </label>
+
+                    <textarea
+                        id="body"
+                        name="body"
+                        class="form-control"
+                        rows="5"
+                        maxlength="3000"
+                        placeholder="Write your response to the student..."
+                        required
+                    ></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-success">
+                    Send Reply
+                </button>
+            </form>
+        </div>
+    {% else %}
+        {# Explain how an administrator can reopen a resolved ticket. #}
+        <div class="alert alert-success">
+            This ticket is resolved. Change its status to Open or In Progress
+            if you need to continue the conversation.
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

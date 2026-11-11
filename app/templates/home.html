@@ -1,24 +1,24 @@
+
 {% extends "base.html" %}
+
 {% block title %}Home - {{ app_name }}{% endblock %}
+
 {% block content %}
 
-<!-- Hero + keyword search (FR-06) -->
-<!-- Hero + keyword search -->
+<!-- Main hero section with the university background and marketplace search. -->
 <section class="hero rounded-3 mb-4 text-white">
 
-  <!-- University building background -->
   <img
-    src="{{ url_for('static', filename='img/uon-building.png') }}"
+    src="{{ url_for('static', filename='img/castle_coverts_hero.png') }}"
     class="hero-background"
-    alt="University of Newcastle">
+    alt="University of Newcastle campus building"
+  >
 
-  <!-- Dark overlay -->
   <div class="hero-overlay"></div>
 
   <div class="hero-content">
     <div class="row align-items-center g-4">
 
-      <!-- LEFT SIDE: Text and search -->
       <div class="col-lg-7">
 
         <h1 class="display-6 fw-bold">
@@ -34,68 +34,238 @@
         <form
           method="get"
           action="{{ url_for('main.browse') }}"
-          class="d-flex gap-2">
-
+          class="d-flex gap-2"
+        >
           <input
             class="form-control form-control-lg"
             type="search"
             name="q"
-            placeholder="Search listings… e.g. textbook, desk, bike">
+            placeholder="Search listings… e.g. textbook, desk, bike"
+            aria-label="Search marketplace listings"
+          >
 
           <button
             class="btn btn-success btn-lg px-4"
-            type="submit">
+            type="submit"
+          >
             Search
           </button>
-
         </form>
 
       </div>
 
-      <!-- RIGHT SIDE: Five students -->
-      <div class="col-lg-5 hero-people-container">
+    </div>
+  </div>
 
-        <img
-          src="{{ url_for('static', filename='img/castle-coverts-people.png') }}"
-          class="hero-people"
-          alt="UoN students">
+</section>
+
+
+<!-- Browse marketplace categories. -->
+<section class="mb-5">
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 mb-0">Browse by category</h2>
+
+    <a
+      href="{{ url_for('main.browse') }}"
+      class="text-success text-decoration-none fw-semibold"
+    >
+      View all listings →
+    </a>
+  </div>
+
+
+  <div class="row g-3">
+
+    {% for cat in nav_categories %}
+
+      <div class="col-6 col-md-4 col-lg-3">
+
+        <a
+          class="text-decoration-none"
+          href="{{ url_for('main.browse', category=cat.category_id) }}"
+        >
+
+          <div class="card category-card h-100 text-center p-3">
+
+            <!-- Professional navy-blue outline category icons. -->
+            <div
+              class="category-icon mb-3"
+              style="color: #173B60; height: 52px;"
+              aria-hidden="true"
+            >
+
+              {% if cat.name == 'Clothing & Accessories' %}
+
+                <!-- T-shirt icon -->
+                <svg viewBox="0 0 48 48" width="46" height="46"
+                     fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                  <path d="M18 8l4-2h4l4 2 9 5-5 10-5-3v20H19V20l-5 3-5-10 9-5z"/>
+                  <path d="M20 7c0 3 2 5 4 5s4-2 4-5"/>
+                </svg>
+
+              {% elif cat.name == 'Electronics' %}
+
+                <!-- Laptop icon -->
+                <svg viewBox="0 0 48 48" width="46" height="46"
+                     fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                  <rect x="9" y="6" width="30" height="25" rx="2"/>
+                  <path d="M5 37h38l-3-6H8l-3 6z"/>
+                  <path d="M20 34h8"/>
+                </svg>
+
+              {% elif cat.name == 'Goods & Furniture' %}
+
+                <!-- Sofa icon -->
+                <svg viewBox="0 0 48 48" width="46" height="46"
+                     fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                  <path d="M9 23v-4a4 4 0 0 1 4-4h22a4 4 0 0 1 4 4v4"/>
+                  <path d="M7 23a4 4 0 0 0-4 4v8h42v-8a4 4 0 0 0-4-4H7z"/>
+                  <path d="M7 35v5m34-5v5M12 23v8m24-8v8"/>
+                </svg>
+
+              {% elif cat.name == 'Housing & Accommodation' %}
+
+                <!-- House icon -->
+                <svg viewBox="0 0 48 48" width="46" height="46"
+                     fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                  <path d="M5 22L24 6l19 16"/>
+                  <path d="M10 19v22h28V19"/>
+                  <path d="M20 41V27h8v14"/>
+                  <path d="M32 25h1"/>
+                </svg>
+
+              {% elif cat.name == 'Services' %}
+
+                <!-- Wrench icon -->
+                <svg viewBox="0 0 48 48" width="46" height="46"
+                     fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                  <path d="M28 8a10 10 0 0 0-12 12L6 30a4 4 0 0 0 6 6l10-10A10 10 0 0 0 34 14l-6 6-6-6 6-6z"/>
+                </svg>
+
+              {% elif cat.name == 'Sports & Recreation' %}
+
+                <!-- Basketball icon -->
+                <svg viewBox="0 0 48 48" width="46" height="46"
+                     fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                  <circle cx="24" cy="24" r="19"/>
+                  <path d="M5 24h38M24 5v38"/>
+                  <path d="M10 11c9 5 15 15 16 32"/>
+                  <path d="M38 11c-9 5-15 15-16 32"/>
+                </svg>
+
+              {% elif cat.name == 'Textbooks & Study Materials' %}
+
+                <!-- Open book icon -->
+                <svg viewBox="0 0 48 48" width="46" height="46"
+                     fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                  <path d="M24 12c-5-4-12-5-19-2v29c7-3 14-2 19 2"/>
+                  <path d="M24 12c5-4 12-5 19-2v29c-7-3-14-2-19 2"/>
+                  <path d="M24 12v29M10 17c4-1 8 0 11 2m-11 5c4-1 8 0 11 2M38 17c-4-1-8 0-11 2m11 5c-4-1-8 0-11 2"/>
+                </svg>
+
+              {% elif cat.name == 'Transport' %}
+
+                <!-- Bicycle icon -->
+                <svg viewBox="0 0 48 48" width="46" height="46"
+                     fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                  <circle cx="10" cy="34" r="8"/>
+                  <circle cx="38" cy="34" r="8"/>
+                  <path d="M10 34l9-16 9 16H10l9-16h9"/>
+                  <path d="M28 34l-6-18h-6"/>
+                  <path d="M24 16h7m-14-1h-5"/>
+                </svg>
+
+              {% else %}
+
+                <!-- Default category icon -->
+                <svg viewBox="0 0 48 48" width="46" height="46"
+                     fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round"
+                     stroke-linejoin="round">
+                  <path d="M6 15l18-10 18 10v20L24 45 6 35V15z"/>
+                  <path d="M6 15l18 10 18-10M24 25v20"/>
+                </svg>
+
+              {% endif %}
+
+            </div>
+
+
+            <h3 class="h6 fw-semibold mb-2">
+              {{ cat.name }}
+            </h3>
+
+            <p class="text-muted small mb-2">
+              {{ cat.description or 'Explore student marketplace listings.' }}
+            </p>
+
+            <span class="badge rounded-pill text-bg-light">
+              {{ cat.listing_count }}
+              {{ 'listing' if cat.listing_count == 1 else 'listings' }}
+            </span>
+
+          </div>
+
+        </a>
 
       </div>
 
-    </div>
-  </div>
-
-</section>
-
-<!-- Category shortcuts -->
-<section class="mb-5">
-  <h2 class="h4 mb-3">Browse by category</h2>
-  <div class="row g-3">
-    {% for cat in nav_categories %}
-    <div class="col-6 col-md-4 col-lg-3">
-      <a class="text-decoration-none" href="{{ url_for('main.browse', category=cat.category_id) }}">
-        <div class="card category-card h-100 text-center p-3">
-          <div class="fs-1">{{ ['🛋️','💻','📚','🚲','🏠','🔧','🏀','👖'][loop.index0 % 8] }}</div>
-          <div class="fw-semibold">{{ cat.name }}</div>
-        </div>
-      </a>
-    </div>
     {% endfor %}
+
   </div>
+
 </section>
 
-<!-- Newest listings -->
+
+<!-- Highlight the newest active marketplace listings. -->
 <section>
+
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="h4 mb-0">Latest listings</h2>
-    <a class="btn btn-outline-success btn-sm" href="{{ url_for('main.browse') }}">View all</a>
+
+    <a
+      class="btn btn-outline-success btn-sm"
+      href="{{ url_for('main.browse') }}"
+    >
+      View all
+    </a>
   </div>
+
   <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-lg-3">
+
     {% for l in latest %}
+
       {% include "listings/_card.html" %}
+
     {% else %}
-      <p class="text-muted">No active listings yet — be the first to post one!</p>
+
+      <div class="col-12">
+        <p class="text-muted mb-0">
+          No active listings yet — be the first to post one!
+        </p>
+      </div>
+
     {% endfor %}
+
   </div>
+
 </section>
+
 {% endblock %}

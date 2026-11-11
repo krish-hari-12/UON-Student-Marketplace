@@ -1,23 +1,21 @@
 -- =====================================================================
 -- UoN Student Marketplace - database schema (SQLite dialect)
 -- COMP6900 Group 7 - Assessment 4
--- Companion MySQL script: mysql_schema.sql (same structure)
 -- =====================================================================
 
 PRAGMA foreign_keys = ON;
 
 -- ---------------------------------------------------------------------
--- users: every account on the platform.
--- BR-01 registration is restricted to approved UoN emails (validated in
--- application code); BR-09 roles can only be changed by an administrator.
+-- 1. USERS
 -- ---------------------------------------------------------------------
 CREATE TABLE users (
     user_id        INTEGER PRIMARY KEY AUTOINCREMENT,
     email          TEXT NOT NULL UNIQUE,
-    password_hash  TEXT NOT NULL,                -- PBKDF2-SHA256, never plain text
+    password_hash  TEXT NOT NULL,
     first_name     TEXT NOT NULL,
     last_name      TEXT NOT NULL,
     phone          TEXT,
+    profile_photo  TEXT,
     role           TEXT NOT NULL DEFAULT 'student'
                    CHECK (role IN ('student', 'admin')),
     status         TEXT NOT NULL DEFAULT 'active'
@@ -26,20 +24,17 @@ CREATE TABLE users (
 );
 
 -- ---------------------------------------------------------------------
--- categories: listing categories (Goods / Housing / Transport / Services
--- plus the two extra demo categories). Administrators manage them (FR-13).
+-- 2. CATEGORIES
 -- ---------------------------------------------------------------------
 CREATE TABLE categories (
     category_id   INTEGER PRIMARY KEY AUTOINCREMENT,
     name          TEXT NOT NULL UNIQUE,
     description   TEXT,
-    is_archived   INTEGER NOT NULL DEFAULT 0      -- 0 active, 1 archived (hidden)
+    is_archived   INTEGER NOT NULL DEFAULT 0
 );
 
 -- ---------------------------------------------------------------------
--- listings: items posted by students (FR-04).
--- status lifecycle: active -> archived | sold; administrators may set
--- 'removed' when moderating (BR-07, BR-10).
+-- 3. LISTINGS
 -- ---------------------------------------------------------------------
 CREATE TABLE listings (
     listing_id   INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,7 +42,7 @@ CREATE TABLE listings (
     category_id  INTEGER NOT NULL REFERENCES categories (category_id),
     title        TEXT NOT NULL,
     description  TEXT NOT NULL,
-    price        REAL NOT NULL DEFAULT 0,          -- AUD, 0 = free
+    price        REAL NOT NULL DEFAULT 0,
     condition    TEXT NOT NULL
                  CHECK (condition IN ('New', 'Like new', 'Good', 'Fair', 'Needs repair')),
     location     TEXT,
@@ -57,7 +52,9 @@ CREATE TABLE listings (
     updated_at   TEXT NOT NULL
 );
 
--- Listing photos (FR-05): up to 3 per listing, first one is primary.
+-- ---------------------------------------------------------------------
+-- 4. LISTING IMAGES
+-- ---------------------------------------------------------------------
 CREATE TABLE listing_images (
     image_id     INTEGER PRIMARY KEY AUTOINCREMENT,
     listing_id   INTEGER NOT NULL REFERENCES listings (listing_id) ON DELETE CASCADE,
@@ -66,7 +63,9 @@ CREATE TABLE listing_images (
     uploaded_at  TEXT NOT NULL
 );
 
--- Favourites (FR-08): one save per user per listing.
+-- ---------------------------------------------------------------------
+-- 5. FAVOURITES
+-- ---------------------------------------------------------------------
 CREATE TABLE favourites (
     user_id      INTEGER NOT NULL REFERENCES users (user_id) ON DELETE CASCADE,
     listing_id   INTEGER NOT NULL REFERENCES listings (listing_id) ON DELETE CASCADE,
@@ -74,8 +73,9 @@ CREATE TABLE favourites (
     PRIMARY KEY (user_id, listing_id)
 );
 
--- Conversations (FR-09): one per (listing, buyer); the seller is the
--- listing owner. BR-05: only these two parties may read/write messages.
+-- ---------------------------------------------------------------------
+-- 6. CONVERSATIONS
+-- ---------------------------------------------------------------------
 CREATE TABLE conversations (
     conversation_id INTEGER PRIMARY KEY AUTOINCREMENT,
     listing_id      INTEGER NOT NULL REFERENCES listings (listing_id) ON DELETE CASCADE,
@@ -84,7 +84,9 @@ CREATE TABLE conversations (
     UNIQUE (listing_id, buyer_id)
 );
 
--- Individual messages inside a conversation (FR-09).
+-- ---------------------------------------------------------------------
+-- 7. MESSAGES
+-- ---------------------------------------------------------------------
 CREATE TABLE messages (
     message_id      INTEGER PRIMARY KEY AUTOINCREMENT,
     conversation_id INTEGER NOT NULL REFERENCES conversations (conversation_id) ON DELETE CASCADE,
@@ -94,8 +96,9 @@ CREATE TABLE messages (
     is_read         INTEGER NOT NULL DEFAULT 0
 );
 
--- Reports (FR-11, BR-06): students report listings; administrators
--- resolve them (FR-12). status: open / in_review / resolved / dismissed.
+-- ---------------------------------------------------------------------
+-- 8. REPORTS
+-- ---------------------------------------------------------------------
 CREATE TABLE reports (
     report_id       INTEGER PRIMARY KEY AUTOINCREMENT,
     listing_id      INTEGER NOT NULL REFERENCES listings (listing_id) ON DELETE CASCADE,
@@ -110,7 +113,9 @@ CREATE TABLE reports (
     created_at      TEXT NOT NULL
 );
 
--- Audit trail (BR-08): every administrator action is recorded.
+-- ---------------------------------------------------------------------
+-- 9. AUDIT LOG
+-- ---------------------------------------------------------------------
 CREATE TABLE audit_log (
     audit_id    INTEGER PRIMARY KEY AUTOINCREMENT,
     admin_id    INTEGER NOT NULL REFERENCES users (user_id),
@@ -121,25 +126,132 @@ CREATE TABLE audit_log (
     created_at  TEXT NOT NULL
 );
 
--- Email notification log (FR-10): simulated emails when SMTP is not
--- configured, plus a record of real sends.
+-- ---------------------------------------------------------------------
+-- 10. EMAIL LOG
+-- ---------------------------------------------------------------------
 CREATE TABLE email_log (
     email_id  INTEGER PRIMARY KEY AUTOINCREMENT,
     recipient TEXT NOT NULL,
     subject   TEXT NOT NULL,
     body      TEXT NOT NULL,
-    status    TEXT NOT NULL,                        -- sent / simulated / failed
+    status    TEXT NOT NULL,
     sent_at   TEXT NOT NULL
 );
 
 -- ---------------------------------------------------------------------
--- Indexes for the main search paths (search & filtering, FR-06/FR-07)
+-- 11. EMAIL OTPS
 -- ---------------------------------------------------------------------
-CREATE INDEX idx_listings_status    ON listings (status);
-CREATE INDEX idx_listings_category  ON listings (category_id);
-CREATE INDEX idx_listings_price     ON listings (price);
-CREATE INDEX idx_listings_user      ON listings (user_id);
-CREATE INDEX idx_images_listing     ON listing_images (listing_id);
-CREATE INDEX idx_messages_conv      ON messages (conversation_id);
-CREATE INDEX idx_favourites_user    ON favourites (user_id);
-CREATE INDEX idx_reports_status     ON reports (status);
+CREATE TABLE email_otps (
+    otp_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    email        TEXT NOT NULL,
+    otp_hash     TEXT NOT NULL,
+    purpose      TEXT NOT NULL
+                 CHECK (purpose IN ('registration', 'password_reset')),
+    expires_at   TEXT NOT NULL,
+    attempts     INTEGER NOT NULL DEFAULT 0,
+    is_used      INTEGER NOT NULL DEFAULT 0,
+    created_at   TEXT NOT NULL
+);
+
+-- ---------------------------------------------------------------------
+-- 12. PENDING REGISTRATIONS
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS pending_registrations (
+    pending_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    email         TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    first_name    TEXT NOT NULL,
+    last_name     TEXT NOT NULL,
+    phone         TEXT,
+    expires_at    TEXT NOT NULL,
+    created_at    TEXT NOT NULL
+);
+
+-- ---------------------------------------------------------------------
+-- 13. SUPPORT TICKETS
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS support_tickets (
+    ticket_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL REFERENCES users(user_id),
+    category    TEXT NOT NULL,
+    subject     TEXT NOT NULL,
+    description TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'open'
+                CHECK (status IN ('open', 'in_progress', 'resolved')),
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL
+);
+
+-- ---------------------------------------------------------------------
+-- 14. SUPPORT MESSAGES
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS support_messages (
+    message_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticket_id  INTEGER NOT NULL
+               REFERENCES support_tickets(ticket_id) ON DELETE CASCADE,
+    sender_id  INTEGER NOT NULL REFERENCES users(user_id),
+    body       TEXT NOT NULL,
+    sent_at    TEXT NOT NULL
+);
+
+-- ---------------------------------------------------------------------
+-- 4. LISTING IMAGES
+-- ---------------------------------------------------------------------
+CREATE TABLE listing_images (
+    image_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    listing_id   INTEGER NOT NULL REFERENCES listings (listing_id) ON DELETE CASCADE,
+    file_path    TEXT NOT NULL,
+    is_primary   INTEGER NOT NULL DEFAULT 0,
+    is_archived  INTEGER NOT NULL DEFAULT 0
+                 CHECK (is_archived IN (0, 1)),
+    uploaded_at  TEXT NOT NULL
+);
+
+-- =====================================================================
+-- INDEXES
+-- =====================================================================
+
+CREATE INDEX idx_listings_status
+ON listings(status);
+
+CREATE INDEX idx_listings_category
+ON listings(category_id);
+
+CREATE INDEX idx_listings_price
+ON listings(price);
+
+CREATE INDEX idx_listings_user
+ON listings(user_id);
+
+CREATE INDEX idx_images_listing
+ON listing_images(listing_id);
+
+CREATE INDEX idx_messages_conv
+ON messages(conversation_id);
+
+CREATE INDEX idx_favourites_user
+ON favourites(user_id);
+
+CREATE INDEX idx_reports_status
+ON reports(status);
+
+CREATE INDEX IF NOT EXISTS idx_email_otps_email_purpose
+ON email_otps(email, purpose, is_used);
+
+CREATE INDEX IF NOT EXISTS idx_pending_registrations_email
+ON pending_registrations(email);
+
+CREATE INDEX IF NOT EXISTS idx_support_tickets_user
+ON support_tickets(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_support_tickets_status
+ON support_tickets(status);
+
+CREATE INDEX IF NOT EXISTS idx_support_messages_ticket
+ON support_messages(ticket_id);
+
+CREATE INDEX IF NOT EXISTS idx_videos_listing
+ON listing_videos(listing_id);
+
+CREATE INDEX idx_images_listing_active
+ON listing_images(listing_id, is_archived);

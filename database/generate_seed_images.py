@@ -1,14 +1,6 @@
-#!/usr/bin/env python3
-"""
-generate_seed_images.py
-=======================
-Regenerates the demo listing photos used by seed.sql as simple labelled
-placeholder images (one per listing) into ../uploads/listings/.
+# Generate placeholder images for demo marketplace listings.
 
-Run from the database folder:  python generate_seed_images.py
-"""
 import os
-
 from PIL import Image, ImageDraw
 
 COLORS = {
@@ -42,28 +34,48 @@ IMAGES = [
 ]
 
 W, H = 640, 480
+UPLOAD_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "uploads", "listings")
+)
 
 
 def draw(filename, label, category):
     top, bottom = COLORS.get(category, ("#5a5a5a", "#222222"))
+
     img = Image.new("RGB", (W, H), top)
-    d = ImageDraw.Draw(img)
-    for y in range(H):  # vertical gradient
+    draw = ImageDraw.Draw(img)
+
+    # Create a vertical gradient background.
+    rgb_top = tuple(int(top[i:i + 2], 16) for i in (1, 3, 5))
+    rgb_bottom = tuple(int(bottom[i:i + 2], 16) for i in (1, 3, 5))
+
+    for y in range(H):
         blend = y / H
-        rgb_top = tuple(int(top[i:i + 2], 16) for i in (1, 3, 5))
-        rgb_bot = tuple(int(bottom[i:i + 2], 16) for i in (1, 3, 5))
-        d.line([(0, y), (W, y)], fill=tuple(
-            int(rgb_top[i] + (rgb_bot[i] - rgb_top[i]) * blend) for i in range(3)))
-    d.rectangle([40, 150, W - 40, H - 150], fill=(255, 255, 255))
-    d.text((60, 170), label, fill=(20, 56, 95))
-    d.text((60, 230), f"{category} - UoN Student Marketplace", fill=(110, 120, 130))
-    d.text((60, 260), "Demo placeholder photo", fill=(150, 155, 160))
+        rgb = tuple(
+            int(rgb_top[i] + (rgb_bottom[i] - rgb_top[i]) * blend)
+            for i in range(3)
+        )
+        draw.line([(0, y), (W, y)], fill=rgb)
+
+    # Add the listing label and category.
+    draw.rectangle([40, 150, W - 40, H - 150], fill=(255, 255, 255))
+    draw.text((60, 170), label, fill=(20, 56, 95))
+    draw.text(
+        (60, 230),
+        f"{category} - UoN Student Marketplace",
+        fill=(110, 120, 130),
+    )
+    draw.text((60, 260), "Demo placeholder photo", fill=(150, 155, 160))
+
     img.save(os.path.join(UPLOAD_DIR, filename))
 
 
 if __name__ == "__main__":
-    UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "..", "uploads", "listings")
     os.makedirs(UPLOAD_DIR, exist_ok=True)
+
     for item in IMAGES:
         draw(*item)
-    print(f"Generated {len(IMAGES)} seed images in {os.path.abspath(UPLOAD_DIR)}")
+
+    print(
+        f"Generated {len(IMAGES)} seed images in {UPLOAD_DIR}"
+    )

@@ -1,13 +1,41 @@
+
 {% extends "base.html" %}
-{% block title %}My favourites - {{ app_name }}{% endblock %}
+
+{% block title %}My Favourites - {{ app_name }}{% endblock %}
+
 {% block content %}
-<h1 class="h3 mb-4">My favourites</h1>
+
+<!-- Page heading for the student's saved marketplace listings. -->
+<h1 class="h3 mb-4">My Favourites</h1>
+
+<!-- Display saved listings using the shared marketplace card component. -->
 <div class="row g-4 row-cols-1 row-cols-sm-2 row-cols-lg-3">
+
   {% for l in listings %}
+
+    <!-- Reuse the same listing card design used on browse and home pages. -->
     {% include "listings/_card.html" %}
+
   {% else %}
-    <div class="col-12"><div class="alert alert-light border">You have not saved any listings yet.
-      Browse the <a href="{{ url_for('main.browse') }}">marketplace</a> and use “Save to favourites”.</div></div>
+
+    <!-- Show guidance when the student has not saved any listings. -->
+    <div class="col-12">
+      <div class="alert alert-light border" role="status">
+        You have not saved any listings yet.
+
+        Browse the
+        <a
+          href="{{ url_for('main.browse') }}"
+          class="alert-link"
+        >
+          marketplace
+        </a>
+        and use "Save to favourites".
+      </div>
+    </div>
+
   {% endfor %}
+
 </div>
+
 {% endblock %}

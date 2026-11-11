@@ -1,32 +1,87 @@
+
 {% extends "base.html" %}
+
 {% block title %}Reports - Admin{% endblock %}
+
 {% block content %}
 <h1 class="h3 mb-4">Listing reports</h1>
+
 <ul class="nav nav-pills mb-3">
-  {% for s, label in [('', 'All'), ('open', 'Open'), ('in_review', 'In review'), ('resolved', 'Resolved'), ('dismissed', 'Dismissed')] %}
-  <li class="nav-item"><a class="nav-link {% if status == s %}active{% endif %}"
-      href="{{ url_for('admin.reports', status=s) }}">{{ label }}</a></li>
-  {% endfor %}
+    {% for s, label in [
+        ('', 'All'),
+        ('open', 'Open'),
+        ('in_review', 'In review'),
+        ('resolved', 'Resolved'),
+        ('dismissed', 'Dismissed')
+    ] %}
+    <li class="nav-item">
+        <a
+            href="{{ url_for('admin.reports', status=s) }}"
+            class="nav-link {% if status == s %}active{% endif %}"
+        >
+            {{ label }}
+        </a>
+    </li>
+    {% endfor %}
 </ul>
+
 <div class="table-responsive card p-2">
-<table class="table table-hover align-middle mb-0">
-  <thead><tr><th>#</th><th>Listing</th><th>Reason</th><th>Reporter</th><th>Status</th><th>Filed</th><th></th></tr></thead>
-  <tbody>
-  {% for r in reports %}
-    <tr>
-      <td>{{ r.report_id }}</td>
-      <td><a href="{{ url_for('listings.detail', listing_id=r.listing_id) }}">{{ r.listing_title|truncate(35) }}</a>
-        {% if r.listing_status == 'removed' %}<span class="badge bg-danger">listing removed</span>{% endif %}</td>
-      <td>{{ r.reason }}</td>
-      <td>{{ r.reporter_name }}</td>
-      <td><span class="badge {% if r.status == 'open' %}bg-danger{% elif r.status == 'in_review' %}bg-warning text-dark{% elif r.status == 'resolved' %}bg-success{% else %}bg-secondary{% endif %}">{{ r.status }}</span></td>
-      <td>{{ r.created_at[:10] }}</td>
-      <td><a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.report_detail', report_id=r.report_id) }}">Review</a></td>
-    </tr>
-  {% else %}
-    <tr><td colspan="7" class="text-center text-muted py-4">No reports found.</td></tr>
-  {% endfor %}
-  </tbody>
-</table>
+    <table class="table table-hover align-middle mb-0">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Listing</th>
+                <th>Reason</th>
+                <th>Reporter</th>
+                <th>Status</th>
+                <th>Filed</th>
+                <th></th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for r in reports %}
+            <tr>
+                <td>{{ r.report_id }}</td>
+
+                <td>
+                    <a href="{{ url_for('listings.detail', listing_id=r.listing_id) }}">
+                        {{ r.listing_title|truncate(35) }}
+                    </a>
+
+                    {% if r.listing_status == 'removed' %}
+                        <span class="badge bg-secondary">Previously removed</span>
+                    {% endif %}
+                </td>
+
+                <td>{{ r.reason }}</td>
+                <td>{{ r.reporter_name }}</td>
+
+                <td>
+                    <span class="badge {% if r.status == 'open' %}bg-danger{% elif r.status == 'in_review' %}bg-warning text-dark{% elif r.status == 'resolved' %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ r.status|replace('_', ' ')|capitalize }}
+                    </span>
+                </td>
+
+                <td>{{ r.created_at[:10] }}</td>
+
+                <td>
+                    <a
+                        href="{{ url_for('admin.report_detail', report_id=r.report_id) }}"
+                        class="btn btn-sm btn-outline-primary"
+                    >
+                        Review
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" class="text-center text-muted py-4">
+                    No reports found.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 {% endblock %}

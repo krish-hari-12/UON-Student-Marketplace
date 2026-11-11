@@ -1,40 +1,121 @@
+
 {% extends "base.html" %}
+
 {% block title %}Report #{{ report.report_id }} - Admin{% endblock %}
+
 {% block content %}
 <h1 class="h3 mb-1">Report #{{ report.report_id }}</h1>
-<p class="text-muted">Filed {{ report.created_at }} by {{ report.reporter_name }} ({{ report.reporter_email }})</p>
+
+<p class="text-muted">
+    Filed {{ report.created_at }} by
+    {{ report.reporter_name }} ({{ report.reporter_email }})
+</p>
+
 <div class="row g-4">
-  <div class="col-lg-6">
-    <div class="card p-4 h-100">
-      <h2 class="h6">Reported listing</h2>
-      <p class="fw-semibold mb-1">{{ report.listing_title }}</p>
-      <p class="small text-muted">{{ report.listing_description|truncate(300) }}</p>
-      <p><span class="text-muted">Current status:</span> {{ report.listing_status }} ·
-         <span class="text-muted">Price:</span> ${{ '%.2f'|format(report.listing_price) }}</p>
-      <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('listings.detail', listing_id=report.listing_id) }}">Open listing</a>
-    </div>
-  </div>
-  <div class="col-lg-6">
-    <div class="card p-4 h-100">
-      <h2 class="h6">The report</h2>
-      <p><span class="badge bg-warning text-dark">{{ report.reason }}</span></p>
-      <p style="white-space: pre-line;">{{ report.details }}</p>
-      <p><span class="text-muted">Status:</span> {{ report.status }}
-        {% if report.resolution_note %} · <span class="text-muted">Note:</span> {{ report.resolution_note }}{% endif %}</p>
-      <h2 class="h6 mt-3">Moderation actions (BR-07 / BR-08)</h2>
-      <form method="post">
-        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-        <div class="mb-2">
-          <input name="note" class="form-control" placeholder="Optional moderation note (stored in audit log)">
+    <div class="col-lg-6">
+        <div class="card p-4 h-100">
+            <h2 class="h6">Reported listing</h2>
+
+            <p class="fw-semibold mb-1">{{ report.listing_title }}</p>
+
+            <p class="small text-muted">
+                {{ report.listing_description|truncate(300) }}
+            </p>
+
+            <p>
+                <span class="text-muted">Current status:</span>
+                {{ report.listing_status|capitalize }}
+                ·
+                <span class="text-muted">Price:</span>
+                ${{ '%.2f'|format(report.listing_price) }}
+            </p>
+
+            <a
+                href="{{ url_for('listings.detail', listing_id=report.listing_id) }}"
+                class="btn btn-sm btn-outline-secondary"
+            >
+                Open listing
+            </a>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
-          <button class="btn btn-danger" name="action" value="remove_listing"
-                  onclick="return confirm('Remove this listing from the marketplace?');">Remove listing</button>
-          <button class="btn btn-outline-secondary" name="action" value="in_review">Mark in review</button>
-          <button class="btn btn-outline-success" name="action" value="dismiss">Dismiss report</button>
-        </div>
-      </form>
     </div>
-  </div>
+
+    <div class="col-lg-6">
+        <div class="card p-4 h-100">
+            <h2 class="h6">The report</h2>
+
+            <p>
+                <span class="badge bg-warning text-dark">
+                    {{ report.reason }}
+                </span>
+            </p>
+
+            <p style="white-space: pre-line;">{{ report.details }}</p>
+
+            <p>
+                <span class="text-muted">Status:</span>
+                {{ report.status|capitalize }}
+
+                {% if report.resolution_note %}
+                    ·
+                    <span class="text-muted">Note:</span>
+                    {{ report.resolution_note }}
+                {% endif %}
+            </p>
+
+            <h2 class="h6 mt-3">Moderation actions</h2>
+
+            <form method="post">
+                <input
+                    type="hidden"
+                    name="_csrf"
+                    value="{{ csrf_token() }}"
+                >
+
+                <div class="mb-3">
+                    <label for="moderation-note" class="form-label">
+                        Moderation note
+                    </label>
+
+                    <input
+                        type="text"
+                        id="moderation-note"
+                        name="note"
+                        class="form-control"
+                        maxlength="500"
+                        placeholder="Optional note for the audit log"
+                    >
+                </div>
+
+                <div class="d-flex gap-2 flex-wrap">
+                    <button
+                        type="submit"
+                        name="action"
+                        value="archive_listing"
+                        class="btn btn-outline-secondary"
+                    >
+                        Archive listing
+                    </button>
+
+                    <button
+                        type="submit"
+                        name="action"
+                        value="in_review"
+                        class="btn btn-outline-primary"
+                    >
+                        Mark in review
+                    </button>
+
+                    <button
+                        type="submit"
+                        name="action"
+                        value="dismiss"
+                        class="btn btn-outline-success"
+                    >
+                        Dismiss report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}

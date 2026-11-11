@@ -1,142 +1,87 @@
-"""
-app/db.py
-=========
-Data-access layer for the UoN Student Marketplace.
+#database module.
+#This module handles SQLite database connections, queries and initialisation.
 
-This module is the ONLY place in the application that talks to a database
-driver directly. It provides:
 
-* ``get_db()``  - a per-request database connection (Flask ``g`` cached)
-* ``query()``   - SELECT helper returning plain dictionaries
-* ``execute()`` - INSERT/UPDATE/DELETE helper returning the new row id
-* ``init_app()``- automatic database creation from ``database/schema.sql``
-                  and ``database/seed.sql`` the first time the app runs
-
-SQL statements throughout the application are written with ``?``
-placeholders. When the MySQL backend is selected the adapter rewrites them
-to ``%s`` (the PyMySQL placeholder) at execution time, so the same
-application code runs on SQLite and MySQL.
-"""
 import sqlite3
 from datetime import datetime
 from pathlib import Path
-
 from flask import current_app, g
 
-# PyMySQL is imported lazily inside _connect_mysql() so the SQLite-only
-# default installation does not require it.
 
-
-# ----------------------------------------------------------------------
-# Connection handling
-# ----------------------------------------------------------------------
+# Connect to the SQLite database.
 def _connect_sqlite(config):
     conn = sqlite3.connect(str(config["SQLITE_PATH"]))
-    # Return rows as dictionaries so templates can use row["column"].
     conn.row_factory = sqlite3.Row
-    # Enforce foreign-key constraints (off by default in SQLite).
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
-def _connect_mysql(config):
-    import pymysql
-
-    return pymysql.connect(
-        host=config["MYSQL_HOST"],
-        port=config["MYSQL_PORT"],
-        user=config["MYSQL_USER"],
-        password=config["MYSQL_PASSWORD"],
-        database=config["MYSQL_DB"],
-        cursorclass=pymysql.cursors.Cursor,
-        autocommit=False,
-        charset="utf8mb4",
-        # Make '||' behave as string concatenation like SQLite/standard SQL.
-        init_command="SET SESSION sql_mode=CONCAT(@@sql_mode, ',PIPES_AS_CONCAT')",
-    )
-
-
 class Database:
-    """A thin wrapper over a DBAPI connection with dictionary rows."""
-
-    def __init__(self, conn, backend):
+    #Handle database queries and operations.
+    def __init__(self, conn):
         self.conn = conn
-        self.backend = backend
 
-    # -- internals ------------------------------------------------------
-    def _sql(self, sql):
-        """Rewrite '?' placeholders to '%s' when running on MySQL."""
-        return sql.replace("?", "%s") if self.backend == "mysql" else sql
-
-    # -- public helpers ---------------------------------------------------
     def query(self, sql, params=(), one=False):
-        """Run a SELECT and return a list of dictionaries (or one dict/None)."""
+        """Run a SELECT query and return dictionary results."""
         cur = self.conn.cursor()
-        cur.execute(self._sql(sql), tuple(params))
-        columns = [d[0] for d in cur.description] if cur.description else []
+        cur.execute(sql, tuple(params))
+        columns = [column[0] for column in cur.description] if cur.description else []
         rows = [dict(zip(columns, row)) for row in cur.fetchall()]
         cur.close()
+
         return rows[0] if (one and rows) else (None if one else rows)
 
     def execute(self, sql, params=()):
-        """Run an INSERT/UPDATE/DELETE, commit, return the new row id."""
+        #Run an INSERT, UPDATE or DELETE query.
         cur = self.conn.cursor()
-        cur.execute(self._sql(sql), tuple(params))
+        cur.execute(sql, tuple(params))
         self.conn.commit()
         new_id = cur.lastrowid
         cur.close()
         return new_id
 
-    # -- schema scripts ----------------------------------------------------
     def executescript(self, sql_text):
-        """Run a multi-statement SQL script (used to load schema/seed files)."""
-        if self.backend == "mysql":
-            cur = self.conn.cursor()
-            for statement in filter(None, (s.strip() for s in sql_text.split(";"))):
-                cur.execute(statement)
-            self.conn.commit()
-            cur.close()
-        else:
-            self.conn.executescript(sql_text)
-            self.conn.commit()
+        #Execute a SQL script containing multiple statements.
+        self.conn.executescript(sql_text)
+        self.conn.commit()
 
 
-# ----------------------------------------------------------------------
-# Flask integration
-# ----------------------------------------------------------------------
+# Get the database connection for the current request.
 def get_db():
-    """Return the request-scoped :class:`Database`, creating it if needed."""
+    #Create a database connection if one does not already exist.
     if "db" not in g:
-        config = current_app.config
-        if config["DB_BACKEND"] == "mysql":
-            g.db = Database(_connect_mysql(config), "mysql")
-        else:
-            g.db = Database(_connect_sqlite(config), "sqlite")
+        g.db = Database(_connect_sqlite(current_app.config))
+
     return g.db
 
 
+# Close the database connection after the request.
 def close_db(_exc=None):
-    """Teardown handler - close the request connection."""
-    db = g.pop("db", None)
-    if db is not None:
-        db.conn.close()
+    #Close the current database connection.
+    database = g.pop("db", None)
+
+    if database is not None:
+        database.conn.close()
 
 
+# Initialise the database when the application starts.
 def init_app(app):
-    """Register teardown and make sure the database exists and is seeded."""
+    #Register database cleanup and initialise required tables.
     app.teardown_appcontext(close_db)
 
-    if app.config["DB_BACKEND"] == "mysql":
-        # MySQL users import database/mysql_schema.sql + mysql_seed.sql
-        # themselves (e.g. through phpMyAdmin) - see the setup guide.
-        return
-
     db_path = app.config["SQLITE_PATH"]
+
+    # Create and seed the database if it does not exist.
     if not db_path.exists():
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        # Schema/seed scripts always live in the project's database folder.
-        schema_path = Path(__file__).resolve().parent.parent / "database" / "schema.sql"
+
+        schema_path = (
+            Path(__file__).resolve().parent.parent
+            / "database"
+            / "schema.sql"
+        )
         seed_path = schema_path.parent / "seed.sql"
+
         conn = _connect_sqlite(app.config)
         try:
             conn.executescript(schema_path.read_text(encoding="utf-8"))
@@ -145,7 +90,127 @@ def init_app(app):
         finally:
             conn.close()
 
+    # Add required tables and columns to existing databases.
+    conn = _connect_sqlite(app.config)
 
+    try:
+        # Add the profile photo column if it is missing.
+        user_columns = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(users)").fetchall()
+        }
+
+        if "profile_photo" not in user_columns:
+            conn.execute("ALTER TABLE users ADD COLUMN profile_photo TEXT")
+
+        # Store OTPs for registration and password reset.
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS email_otps (
+                otp_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL,
+                otp_hash TEXT NOT NULL,
+                purpose TEXT NOT NULL
+                    CHECK (purpose IN ('registration', 'password_reset')),
+                expires_at TEXT NOT NULL,
+                attempts INTEGER NOT NULL DEFAULT 0,
+                is_used INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL
+            )
+        """)
+
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_email_otps_email_purpose
+            ON email_otps (email, purpose, is_used)
+        """)
+
+        # Store temporary registration details.
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS pending_registrations (
+                pending_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                first_name TEXT NOT NULL,
+                last_name TEXT NOT NULL,
+                phone TEXT,
+                expires_at TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+        """)
+
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_pending_registrations_email
+            ON pending_registrations (email)
+        """)
+
+        # Store customer support tickets.
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS support_tickets (
+                ticket_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL
+                    REFERENCES users(user_id),
+                category TEXT NOT NULL,
+                subject TEXT NOT NULL,
+                description TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'open'
+                    CHECK (status IN ('open', 'in_progress', 'resolved')),
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+
+        # Store messages between users and administrators.
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS support_messages (
+                message_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ticket_id INTEGER NOT NULL
+                    REFERENCES support_tickets(ticket_id)
+                    ON DELETE CASCADE,
+                sender_id INTEGER NOT NULL
+                    REFERENCES users(user_id),
+                body TEXT NOT NULL,
+                sent_at TEXT NOT NULL
+            )
+        """)
+
+        # Create indexes for support ticket queries.
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_support_tickets_user
+            ON support_tickets(user_id)
+        """)
+
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_support_tickets_status
+            ON support_tickets(status)
+        """)
+
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_support_messages_ticket
+            ON support_messages(ticket_id)
+        """)
+
+        # Store videos attached to marketplace listings.
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS listing_videos (
+                video_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                listing_id INTEGER NOT NULL
+                    REFERENCES listings(listing_id)
+                    ON DELETE CASCADE,
+                file_path TEXT NOT NULL,
+                uploaded_at TEXT NOT NULL
+            )
+        """)
+
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_videos_listing
+            ON listing_videos(listing_id)
+        """)
+
+        conn.commit()
+
+    finally:
+        conn.close()
+
+
+# Return the current timestamp.
 def now():
-    """Current timestamp formatted for storage (portable across backends)."""
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")

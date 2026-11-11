@@ -82,8 +82,45 @@ def test_disallowed_file_type_rejected(client, login_student, csrf):
     assert "uploads/" not in page  # the exe was never stored
 
 
-def test_delete_listing(client, login_student, new_listing, csrf):
+
+def test_reactivate_archived_listing(login_student, new_listing, csrf):
+    """Owners can reactivate their archived listings."""
     token = csrf("/my-listings")
-    response = login_student.post(f"/listings/{new_listing}/delete", data={"_csrf": token})
+
+    response = login_student.post(
+        f"/listings/{new_listing}/status",
+        data={"_csrf": token, "status": "active"}
+    )
+
     assert response.status_code == 302
-    assert login_student.get(f"/listings/{new_listing}").status_code == 404
+
+    page = login_student.get("/listings").get_data(as_text=True)
+    assert "Test gaming chair" in page
+
+
+def test_mark_listing_as_sold(login_student, new_listing, csrf):
+    """Owners can mark their listings as sold."""
+    token = csrf("/my-listings")
+
+    response = login_student.post(
+        f"/listings/{new_listing}/status",
+        data={"_csrf": token, "status": "sold"}
+    )
+
+    assert response.status_code == 302
+
+    page = login_student.get("/my-listings").get_data(as_text=True)
+    assert "Test gaming chair" in page
+    assert "Sold" in page
+
+
+def test_invalid_listing_status_is_rejected(login_student, new_listing, csrf):
+    """Unsupported listing statuses must be rejected."""
+    token = csrf("/my-listings")
+
+    response = login_student.post(
+        f"/listings/{new_listing}/status",
+        data={"_csrf": token, "status": "deleted"}
+    )
+
+    assert response.status_code == 400
